@@ -1,2 +1,2 @@
-# running-game
-under construction game
+### Running Game Revamped
+made by 2D-Runner-Man
