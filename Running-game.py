@@ -42,6 +42,9 @@ controller = {
     "up": False
 }
 
+# Constants
+GROUND_Y = 395  # Y-coordinate of the ground line
+
 # Reset function for the player
 def reset():
     rectangle["x"] = 200
@@ -91,8 +94,8 @@ def game_loop():
         rectangle["y_velocity"] *= 0.95  # Friction
 
         # Check boundaries and collisions
-        if rectangle["y"] > SCREEN_HEIGHT - rectangle["height"] - 10:  # Ground collision
-            rectangle["y"] = SCREEN_HEIGHT - rectangle["height"] - 10
+        if rectangle["y"] > GROUND_Y - rectangle["height"]:  # Ground collision
+            rectangle["y"] = GROUND_Y - rectangle["height"]
             rectangle["y_velocity"] = 0
             rectangle["jumping"] = False
 
@@ -111,7 +114,7 @@ def game_loop():
             reset()
 
         # Draw ground
-        pygame.draw.line(screen, (32, 40, 48), (100, 395), (810, 395), 10)
+        pygame.draw.line(screen, (32, 40, 48), (100, GROUND_Y), (810, GROUND_Y), 10)
 
         # Draw rectangle (player)
         pygame.draw.rect(
