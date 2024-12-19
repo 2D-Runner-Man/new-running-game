@@ -1,5 +1,6 @@
 import pygame
 import sys
+from start_page import start_screen
 
 # Initialize pygame
 pygame.init()
@@ -143,4 +144,5 @@ def game_loop():
 
 # Start the game
 if __name__ == "__main__":
+    start_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT)
     game_loop()
