@@ -1,7 +1,7 @@
 import pygame
 import sys
 
-# Initialize pygame
+# Initialize Pygame
 pygame.init()
 
 # Screen dimensions
@@ -13,6 +13,7 @@ pygame.display.set_caption("2D Running Game")
 
 # Colors
 BLACK = (32, 32, 32)
+WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 
@@ -47,12 +48,37 @@ controller = {
 # Constants
 GROUND_Y = 395  # Y-coordinate of the ground line
 
+# Fonts
+font = pygame.font.Font(None, 60)
+
 # Reset function for the player
 def reset():
     rectangle["x"] = 200
     rectangle["y"] = 0
     rectangle["x_velocity"] = 0
     rectangle["y_velocity"] = 0
+
+# Start screen function
+def start_screen():
+    title_text = font.render("2D Running Game", True, WHITE)
+    title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))
+
+    start_text = font.render("Press any key to start", True, WHITE)
+    start_rect = start_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 50))
+
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                running = False
+
+        screen.fill(BLACK)
+        screen.blit(title_text, title_rect)
+        screen.blit(start_text, start_rect)
+        pygame.display.flip()
 
 # Game loop
 def game_loop():
@@ -143,4 +169,5 @@ def game_loop():
 
 # Start the game
 if __name__ == "__main__":
-    game_loop()
+    start_screen()  # Show the start screen
+    game_loop()     # Start the main game loop
