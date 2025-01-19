@@ -7,8 +7,6 @@ var obstacle = document.getElementById("obstacle");
   
  
 
-
-
 context.canvas.height = 500;
 context.canvas.width = 900;
 /*context.canvas.interval = setInterval(updateCanvas, 20);
