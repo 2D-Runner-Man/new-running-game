@@ -73,6 +73,14 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.transform.rotate(self.original_image, self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
 
+    def respawn(self):
+        """Respawn the player from above."""
+        self.rect.x = SCREEN_WIDTH // 2  # Center horizontally
+        self.rect.y = -self.rect.height  # Spawn just above the screen
+        self.x_velocity = 0
+        self.y_velocity = 0
+        self.jumping = True  # Prevent immediate jumping
+
 # Obstacle class
 class Obstacle(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height, x_velocity):
@@ -119,16 +127,15 @@ def game_loop():
                     controller["right"] = key_state
                 elif event.key == pygame.K_UP:
                     controller["up"] = key_state
+                elif event.key == pygame.K_ESCAPE and key_state:  # Escape key to exit
+                    running = False
 
         # Update sprites
         all_sprites.update(controller)
 
         # Check collision with obstacle
         if pygame.sprite.spritecollide(player, obstacles, False):
-            player.rect.x = 200
-            player.rect.y = GROUND_Y - 50
-            player.x_velocity = 0
-            player.y_velocity = 0
+            player.respawn()  # Respawn player when colliding with the obstacle
 
         # Draw ground
         pygame.draw.line(screen, (32, 40, 48), (100, GROUND_Y), (810, GROUND_Y), 10)
