@@ -75,19 +75,28 @@ class Player(pygame.sprite.Sprite):
 
 # Obstacle class
 class Obstacle(pygame.sprite.Sprite):
-    def __init__(self, x, y, width, height):
+    def __init__(self, x, y, width, height, x_velocity):
         super().__init__()
         self.image = pygame.Surface((width, height))
         self.image.fill(GREEN)
         self.rect = self.image.get_rect(topleft=(x, y))
+        self.x_velocity = x_velocity
+
+    def update(self, *args):  # Accept any arguments to prevent errors
+        # Move the obstacle side to side
+        self.rect.x += self.x_velocity
+
+        # Reverse direction when hitting screen boundaries
+        if self.rect.right >= SCREEN_WIDTH or self.rect.left <= 0:
+            self.x_velocity *= -1
 
 # Game loop
 def game_loop():
     # Initialize player and obstacle
     player = Player(200, GROUND_Y - 50, 50, 50)
-    obstacle = Obstacle(450, 316, 75, 75)
+    obstacle = Obstacle(450, 316, 75, 75, 4)  # Green rectangle with velocity
 
-    all_sprites = pygame.sprite.Group(player)
+    all_sprites = pygame.sprite.Group(player, obstacle)
     obstacles = pygame.sprite.Group(obstacle)
 
     controller = {"left": False, "right": False, "up": False}
@@ -111,8 +120,8 @@ def game_loop():
                 elif event.key == pygame.K_UP:
                     controller["up"] = key_state
 
-        # Update player
-        player.update(controller)
+        # Update sprites
+        all_sprites.update(controller)
 
         # Check collision with obstacle
         if pygame.sprite.spritecollide(player, obstacles, False):
@@ -126,7 +135,6 @@ def game_loop():
 
         # Draw all sprites
         all_sprites.draw(screen)
-        obstacles.draw(screen)
 
         # Update display
         pygame.display.flip()
