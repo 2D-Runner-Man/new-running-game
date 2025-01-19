@@ -1,5 +1,6 @@
 import pygame
 import sys
+import random
 from start_page import start_screen
 
 # Initialize pygame
@@ -13,6 +14,7 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("2D Running Game")
 
 # Colors
+WHITE = (255, 255, 255)  # White background
 BLACK = (32, 32, 32)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
@@ -34,7 +36,7 @@ class Player(pygame.sprite.Sprite):
         self.x_velocity = 0
         self.y_velocity = 0
         self.jumping = True
-        self.angle = 0  # Angle for rotation
+        self.angle = 0
 
     def update(self, controller):
         # Movement logic
@@ -44,11 +46,11 @@ class Player(pygame.sprite.Sprite):
 
         if controller["left"]:
             self.x_velocity -= 0.5
-            self.angle += 5  # Rotate counter-clockwise
+            self.angle += 5
 
         if controller["right"]:
             self.x_velocity += 0.5
-            self.angle -= 5  # Rotate clockwise
+            self.angle -= 5
 
         # Apply physics
         self.rect.x += self.x_velocity
@@ -57,61 +59,61 @@ class Player(pygame.sprite.Sprite):
         self.x_velocity *= 0.95  # Friction
         self.y_velocity *= 0.95  # Friction
 
+        # Screen wrap-around
+        if self.rect.left > SCREEN_WIDTH:  # Exit screen from the right
+            self.rect.right = 0  # Appear on the left
+        elif self.rect.right < 0:  # Exit screen from the left
+            self.rect.left = SCREEN_WIDTH  # Appear on the right
+
         # Check ground collision
         if self.rect.y > GROUND_Y - self.rect.height:
             self.rect.y = GROUND_Y - self.rect.height
             self.y_velocity = 0
             self.jumping = False
 
-        # Boundary wrap-around
-        if self.rect.x < -self.rect.width:
-            self.rect.x = SCREEN_WIDTH
-        elif self.rect.x > SCREEN_WIDTH:
-            self.rect.x = -self.rect.width
-
         # Rotate the player
         self.image = pygame.transform.rotate(self.original_image, self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
 
     def respawn(self):
-        """Respawn the player from above."""
-        self.rect.x = SCREEN_WIDTH // 2  # Center horizontally
-        self.rect.y = -self.rect.height  # Spawn just above the screen
+        """Respawn the player at the center of the screen."""
+        self.rect.x = SCREEN_WIDTH // 2
+        self.rect.y = -self.rect.height
         self.x_velocity = 0
         self.y_velocity = 0
-        self.jumping = True  # Prevent immediate jumping
+        self.jumping = True
 
 # Obstacle class
 class Obstacle(pygame.sprite.Sprite):
-    def __init__(self, x, y, width, height, x_velocity):
+    def __init__(self, x, y, width, height, speed):
         super().__init__()
         self.image = pygame.Surface((width, height))
         self.image.fill(GREEN)
         self.rect = self.image.get_rect(topleft=(x, y))
-        self.x_velocity = x_velocity
+        self.speed = speed
 
-    def update(self, *args):  # Accept any arguments to prevent errors
-        # Move the obstacle side to side
-        self.rect.x += self.x_velocity
-
-        # Reverse direction when hitting screen boundaries
-        if self.rect.right >= SCREEN_WIDTH or self.rect.left <= 0:
-            self.x_velocity *= -1
+    def update(self, *args):
+        """Move the obstacle to the left and remove it if off-screen."""
+        self.rect.x -= self.speed
+        if self.rect.right < 0:
+            self.kill()
 
 # Game loop
 def game_loop():
-    # Initialize player and obstacle
+    # Initialize player
     player = Player(200, GROUND_Y - 50, 50, 50)
-    obstacle = Obstacle(450, 316, 75, 75, 4)  # Green rectangle with velocity
-
-    all_sprites = pygame.sprite.Group(player, obstacle)
-    obstacles = pygame.sprite.Group(obstacle)
+    all_sprites = pygame.sprite.Group(player)
+    obstacles = pygame.sprite.Group()
 
     controller = {"left": False, "right": False, "up": False}
     running = True
 
+    # Timer for spawning obstacles
+    obstacle_timer = 0
+    spawn_interval = 90  # Spawn new obstacles every 90 frames
+
     while running:
-        screen.fill(BLACK)  # Clear screen
+        screen.fill(WHITE) # Clear screen
 
         # Handle events
         for event in pygame.event.get():
@@ -127,18 +129,28 @@ def game_loop():
                     controller["right"] = key_state
                 elif event.key == pygame.K_UP:
                     controller["up"] = key_state
-                elif event.key == pygame.K_ESCAPE and key_state:  # Escape key to exit
+                elif event.key == pygame.K_ESCAPE and key_state:
                     running = False
 
-        # Update sprites
+        # Update player and obstacles
         all_sprites.update(controller)
 
-        # Check collision with obstacle
+        # Spawn obstacles
+        obstacle_timer += 1
+        if obstacle_timer >= spawn_interval:
+            obstacle_timer = 0
+            obstacle_x = SCREEN_WIDTH + random.randint(0, 200)
+            obstacle_y = GROUND_Y - 75  # Place obstacle on the ground
+            obstacle = Obstacle(obstacle_x, obstacle_y, 75, 75, speed=5)
+            all_sprites.add(obstacle)
+            obstacles.add(obstacle)
+
+        # Check collision with obstacles
         if pygame.sprite.spritecollide(player, obstacles, False):
-            player.respawn()  # Respawn player when colliding with the obstacle
+            player.respawn()  # Respawn player when colliding with an obstacle
 
         # Draw ground
-        pygame.draw.line(screen, (32, 40, 48), (100, GROUND_Y), (810, GROUND_Y), 10)
+        pygame.draw.line(screen, (32, 40, 48), (0, GROUND_Y), (SCREEN_WIDTH, GROUND_Y), 10)
 
         # Draw all sprites
         all_sprites.draw(screen)
