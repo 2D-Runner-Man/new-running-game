@@ -139,6 +139,11 @@ def game_over_screen():
 
 def game_loop(player_name):
     """The main game loop."""
+    # Load the mountain background
+    mountain_bg = pygame.image.load("new-running-game\\mountains.png").convert()
+    mountain_bg = pygame.transform.scale(mountain_bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
+    bg_x1, bg_x2 = 0, SCREEN_WIDTH  # Positions for two background images to create a seamless loop
+
     player = Player(200, GROUND_Y - 50, 50, 50, name=player_name)
     all_sprites = pygame.sprite.Group(player)
     obstacles = pygame.sprite.Group()
@@ -163,6 +168,19 @@ def game_loop(player_name):
                     controller["up"] = key_state
                 elif event.key == pygame.K_ESCAPE and key_state:
                     return
+
+        # Scroll the background
+        bg_x1 -= 2  # Adjust the speed of the scrolling
+        bg_x2 -= 2
+        if bg_x1 <= -SCREEN_WIDTH:
+            bg_x1 = SCREEN_WIDTH
+        if bg_x2 <= -SCREEN_WIDTH:
+            bg_x2 = SCREEN_WIDTH
+
+        # Draw the background
+        # Draw background image, scaled to the screen dimensions
+        screen.blit(pygame.transform.scale(mountain_bg, (SCREEN_WIDTH, SCREEN_HEIGHT)), (0, 0))
+
 
         # Update Sprites
         all_sprites.update(controller)
@@ -195,18 +213,16 @@ def game_loop(player_name):
         floating_blocks.draw(screen)
 
         # Display Score and Lives
-        score_text = font.render(f"Score: {score}", True, BLACK)
-        lives_text = font.render(f"Lives: {player.lives}", True, RED)
-        screen.blit(score_text, (10, 10))
-        screen.blit(lives_text, (10, 50))
-
+        screen.blit(font.render(f"Lives: {player.lives}", True, BLACK), (10, 10))
+        screen.blit(font.render(f"Score: {score}", True, BLACK), (10, 40))
         pygame.display.flip()
-        clock.tick(60)
 
-    game_over_screen()  # Show Game Over screen when lives are lost
+        clock.tick(60)  # Cap the frame rate
+
+    game_over_screen()  # Display game over when lives run out
 
 
-if __name__ == "__main__":
-    start_screen()
-    player_name = name_input_screen()
-    game_loop(player_name)
+# Run the game
+start_screen()
+player_name = name_input_screen()
+game_loop(player_name)
