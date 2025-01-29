@@ -6,7 +6,7 @@ import random
 pygame.init()
 
 # Screen setup
-SCREEN_WIDTH, SCREEN_HEIGHT = 900, 500
+SCREEN_WIDTH, SCREEN_HEIGHT = 1000, 600
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("2D Running Game")
 
