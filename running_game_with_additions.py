@@ -6,7 +6,7 @@ import random
 pygame.init()
 
 # Screen setup
-SCREEN_WIDTH, SCREEN_HEIGHT = 1000, 600
+SCREEN_WIDTH, SCREEN_HEIGHT = 900, 500
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("2D Running Game")
 
@@ -178,9 +178,8 @@ def game_loop(player_name):
             bg_x2 = SCREEN_WIDTH
 
         # Draw the background
-        # Draw background image, scaled to the screen dimensions
-        screen.blit(pygame.transform.scale(mountain_bg, (SCREEN_WIDTH, SCREEN_HEIGHT)), (0, 0))
-
+        screen.blit(mountain_bg, (bg_x1, 0))
+        screen.blit(mountain_bg, (bg_x2, 0))
 
         # Update Sprites
         all_sprites.update(controller)
