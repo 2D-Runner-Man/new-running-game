@@ -1,148 +1,165 @@
+# running_game.py
 import pygame
 import sys
-from start_page import start_screen
+import random
+# Importing from folders
+from screens.start_screen import start_screen
+from screens.game_over_screen import game_over_screen
+from screens.name_input_screen import name_input_screen
 
 # Initialize pygame
 pygame.init()
 
-# Screen dimensions
+# Screen setup
 SCREEN_WIDTH, SCREEN_HEIGHT = 900, 500
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-
-# Game Caption
 pygame.display.set_caption("2D Running Game")
 
-# Colors
-BLACK = (32, 32, 32)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
+# Colors and constants
+WHITE, BLACK, RED, GREEN = (255, 255, 255), (32, 32, 32), (255, 0, 0), (0, 255, 0)
+GROUND_Y, clock = 395, pygame.time.Clock()
 
-# Clock for controlling frame rate
-clock = pygame.time.Clock()
+# Fonts
+font = pygame.font.Font(None, 36)
+large_font = pygame.font.Font(None, 60)
 
-# Rectangle (player) and obstacle attributes
-rectangle = {
-    "x": 200,
-    "y": 0,
-    "width": 50,
-    "height": 50,
-    "x_velocity": 0,
-    "y_velocity": 0,
-    "jumping": True
-}
+class Player(pygame.sprite.Sprite):
+    """The main player class."""
+    def __init__(self, x, y, width, height, name):
+        super().__init__()
+        self.original_image = pygame.Surface((width, height), pygame.SRCALPHA)
+        self.original_image.fill(RED)
+        self.image = self.original_image
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.x_velocity, self.y_velocity, self.jumping, self.angle, self.name = 0, 0, True, 0, name
+        self.lives = 3
 
-obstacle = {
-    "x": 450,
-    "y": 316,
-    "width": 75,
-    "height": 75
-}
+    def update(self, controller):
+        if controller["up"] and not self.jumping:
+            self.y_velocity, self.jumping = -20, True
+        if controller["left"]:
+            self.x_velocity, self.angle = self.x_velocity - 0.5, self.angle + 5
+        if controller["right"]:
+            self.x_velocity, self.angle = self.x_velocity + 0.5, self.angle - 5
+        self.rect.x += self.x_velocity
+        self.rect.y += self.y_velocity
+        self.y_velocity, self.x_velocity = self.y_velocity + 0.8, self.x_velocity * 0.95
+        if self.rect.bottom > GROUND_Y:
+            self.rect.bottom, self.jumping, self.y_velocity = GROUND_Y, False, 0
+        self.image = pygame.transform.rotate(self.original_image, self.angle)
+        self.rect = self.image.get_rect(center=self.rect.center)
 
-# Controller object to track key presses
-controller = {
-    "left": False,
-    "right": False,
-    "up": False
-}
+    def respawn(self):
+        self.rect.x, self.rect.y, self.x_velocity, self.y_velocity, self.jumping = 50, -50, 0, 0, True  # Spawn at the left
+    
+    def draw(self, screen):
+        """Draw the player and their name."""
+        screen.blit(self.image, self.rect.topleft)
+        name_surface = font.render(self.name, True, BLACK)
+        screen.blit(name_surface, name_surface.get_rect(center=(self.rect.centerx, self.rect.top - 10)))
 
-# Constants
-GROUND_Y = 395  # Y-coordinate of the ground line
+class Obstacle(pygame.sprite.Sprite):
+    """The obstacle class."""
+    def __init__(self, x, y, width, height, speed, color=None, image_path=None):
+        super().__init__()
+        if image_path:
+            self.image = pygame.image.load('images/coin.jpg').convert_alpha()
+            self.image = pygame.transform.scale(self.image, (width, height))
+        else:
+            self.image = pygame.Surface((width, height))
+            self.image.fill(color or (0, 0, 0))
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.speed = speed
 
-# Reset function for the player
-def reset():
-    rectangle["x"] = 200
-    rectangle["y"] = 0
-    rectangle["x_velocity"] = 0
-    rectangle["y_velocity"] = 0
+    def update(self):
+        self.rect.x -= self.speed
+        if self.rect.right < 0:
+            self.kill()
 
-# Game loop
-def game_loop():
-    global controller
-    running = True
+def game_loop(player_name):
+    """The main game loop."""
+    mountain_bg = pygame.image.load("images/mountains.png").convert()
+    mountain_bg = pygame.transform.scale(mountain_bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
+    bg_x1, bg_x2 = 0, SCREEN_WIDTH  # Positions for two background images to create a seamless loop
 
-    while running:
-        screen.fill(BLACK)  # Clear screen
+    player = Player(50, GROUND_Y - 50, 50, 50, name=player_name)
+    all_sprites = pygame.sprite.Group(player)
+    obstacles = pygame.sprite.Group()
+    coins = pygame.sprite.Group()
+    controller, obstacle_timer, spawn_interval, score, respawn_timer = {"left": False, "right": False, "up": False}, 0, 90, 0, 0
 
-        # Handle events
+    while player.lives > 0:
+        screen.fill(WHITE)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
-
+                pygame.quit()
+                sys.exit()
             if event.type in (pygame.KEYDOWN, pygame.KEYUP):
                 key_state = event.type == pygame.KEYDOWN
-
                 if event.key == pygame.K_LEFT:
                     controller["left"] = key_state
                 elif event.key == pygame.K_RIGHT:
                     controller["right"] = key_state
                 elif event.key == pygame.K_UP:
                     controller["up"] = key_state
+                elif event.key == pygame.K_ESCAPE and key_state:
+                    return
+        # Scroll the background
+        bg_x1 -= 2  # Adjust the speed of the scrolling
+        bg_x2 -= 2
+        if bg_x1 <= -SCREEN_WIDTH:
+            bg_x1 = SCREEN_WIDTH
+        if bg_x2 <= -SCREEN_WIDTH:
+            bg_x2 = SCREEN_WIDTH
 
-        # Update rectangle (player) movement
-        if controller["up"] and not rectangle["jumping"]:
-            rectangle["y_velocity"] -= 20
-            rectangle["jumping"] = True
+        # Draw the background
+        screen.blit(mountain_bg, (bg_x1, 0))
+        screen.blit(mountain_bg, (bg_x2, 0))
 
-        if controller["left"]:
-            rectangle["x_velocity"] -= 0.5
+        # Update Sprites
+        all_sprites.update(controller)
+        obstacles.update()
+        coins.update()
 
-        if controller["right"]:
-            rectangle["x_velocity"] += 0.5
+        if respawn_timer == 0:
+            obstacle_timer += 1
+            if obstacle_timer >= spawn_interval:
+                obstacle_timer = 0
+                obstacle_x = SCREEN_WIDTH + random.randint(0, 200)
+                obstacle_y = GROUND_Y - 75
+                coin_y = GROUND_Y - 175
+                obstacles.add(Obstacle(obstacle_x, obstacle_y, 75, 75, speed=5, color=GREEN))
+                coins.add(Obstacle(obstacle_x, coin_y, 50, 50, speed=5, image_path="new-running-game/coin.png"))
 
-        # Apply physics
-        rectangle["x"] += rectangle["x_velocity"]
-        rectangle["y"] += rectangle["y_velocity"]
-        rectangle["y_velocity"] += 0.8  # Gravity
-        rectangle["x_velocity"] *= 0.95  # Friction
-        rectangle["y_velocity"] *= 0.95  # Friction
+        if pygame.sprite.spritecollide(player, obstacles, False):
+            player.respawn()
+            player.lives -= 1
+            respawn_timer = 60  # 1 second delay before spawning obstacles
 
-        # Check boundaries and collisions
-        if rectangle["y"] > GROUND_Y - rectangle["height"]:  # Ground collision
-            rectangle["y"] = GROUND_Y - rectangle["height"]
-            rectangle["y_velocity"] = 0
-            rectangle["jumping"] = False
+        if pygame.sprite.spritecollide(player, coins, True):
+            score += 1
 
-        if rectangle["x"] < -rectangle["width"]:  # Left boundary
-            rectangle["x"] = SCREEN_WIDTH
-        elif rectangle["x"] > SCREEN_WIDTH:  # Right boundary
-            rectangle["x"] = -rectangle["width"]
+        if respawn_timer > 0:
+            respawn_timer -= 1
 
-        # Obstacle collision
-        if (
-            rectangle["x"] < obstacle["x"] + obstacle["width"] and
-            rectangle["x"] + rectangle["width"] > obstacle["x"] and
-            rectangle["y"] < obstacle["y"] + obstacle["height"] and
-            rectangle["y"] + rectangle["height"] > obstacle["y"]
-        ):
-            reset()
-
-        # Draw ground
-        pygame.draw.line(screen, (32, 40, 48), (100, GROUND_Y), (810, GROUND_Y), 10)
-
-        # Draw rectangle (player)
-        pygame.draw.rect(
-            screen,
-            RED,
-            pygame.Rect(rectangle["x"], rectangle["y"], rectangle["width"], rectangle["height"])
-        )
-
-        # Draw obstacle
-        pygame.draw.rect(
-            screen,
-            GREEN,
-            pygame.Rect(obstacle["x"], obstacle["y"], obstacle["width"], obstacle["height"])
-        )
-
-        # Update display
+        # Draws everything
+        pygame.draw.line(screen, BLACK, (0, GROUND_Y), (SCREEN_WIDTH, GROUND_Y), 10)
+        all_sprites.draw(screen)
+        player.draw(screen)
+        obstacles.draw(screen)
+        coins.draw(screen)
+        
+        # Display Score and Lives
+        screen.blit(font.render(f"Lives: {player.lives}", True, BLACK), (10, 10))
+        screen.blit(font.render(f"Score: {score}", True, BLACK), (10, 40))
         pygame.display.flip()
 
-        # Cap the frame rate
-        clock.tick(60)
+        clock.tick(60) # Cap the frame rate
 
-    pygame.quit()
-    sys.exit()
+    game_over_screen(screen, font, large_font)
 
-# Start the game
-if __name__ == "__main__":
-    start_screen(screen, SCREEN_WIDTH, SCREEN_HEIGHT)
-    game_loop()
+# Main game flow
+start_screen(screen, font, large_font)
+player_name = name_input_screen(screen, font)
+if player_name:  # Only proceed if a valid name is entered
+    game_loop(player_name)
