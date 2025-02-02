@@ -1,4 +1,3 @@
-# running_game.py
 import pygame
 import sys
 import random
@@ -24,30 +23,38 @@ font = pygame.font.Font(None, 36)
 large_font = pygame.font.Font(None, 60)
 
 class Player(pygame.sprite.Sprite):
-    """The main player class."""
+    """The main player class with running animation."""
     def __init__(self, x, y, width, height, name):
         super().__init__()
-        self.original_image = pygame.Surface((width, height), pygame.SRCALPHA)
-        self.original_image.fill(RED)
-        self.image = self.original_image
+        # Load the player running animation frames
+        self.frames = [pygame.image.load(f'running-game-animations/running/frame-{i}.png').convert_alpha() for i in range(1, 7)]
+        self.current_frame = 0
+        self.image = pygame.transform.scale(self.frames[self.current_frame], (width, height))
         self.rect = self.image.get_rect(topleft=(x, y))
         self.x_velocity, self.y_velocity, self.jumping, self.angle, self.name = 0, 0, True, 0, name
         self.lives = 3
+        self.animation_speed = 5  # Speed of animation frames switching
+        self.animation_counter = 0
 
     def update(self, controller):
         if controller["up"] and not self.jumping:
             self.y_velocity, self.jumping = -20, True
         if controller["left"]:
-            self.x_velocity, self.angle = self.x_velocity - 0.5, self.angle + 5
+            self.x_velocity = -2  # Move left slowly
         if controller["right"]:
-            self.x_velocity, self.angle = self.x_velocity + 0.5, self.angle - 5
+            self.x_velocity = 2  # Move right slowly
         self.rect.x += self.x_velocity
         self.rect.y += self.y_velocity
         self.y_velocity, self.x_velocity = self.y_velocity + 0.8, self.x_velocity * 0.95
         if self.rect.bottom > GROUND_Y:
             self.rect.bottom, self.jumping, self.y_velocity = GROUND_Y, False, 0
-        self.image = pygame.transform.rotate(self.original_image, self.angle)
-        self.rect = self.image.get_rect(center=self.rect.center)
+
+        # Animate running frames
+        self.animation_counter += 1
+        if self.animation_counter >= self.animation_speed:
+            self.animation_counter = 0
+            self.current_frame = (self.current_frame + 1) % len(self.frames)  # Loop through the frames
+            self.image = pygame.transform.scale(self.frames[self.current_frame], self.rect.size)
 
     def respawn(self):
         self.rect.x, self.rect.y, self.x_velocity, self.y_velocity, self.jumping = 50, -50, 0, 0, True  # Spawn at the left
