@@ -140,7 +140,7 @@ def game_over_screen():
 def game_loop(player_name):
     """The main game loop."""
     # Load the mountain background
-    mountain_bg = pygame.image.load("new-running-game\\mountains.png").convert()
+    mountain_bg = pygame.image.load("mountains.png").convert()
     mountain_bg = pygame.transform.scale(mountain_bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
     bg_x1, bg_x2 = 0, SCREEN_WIDTH  # Positions for two background images to create a seamless loop
 
