@@ -23,47 +23,96 @@ font = pygame.font.Font(None, 36)
 large_font = pygame.font.Font(None, 60)
 
 class Player(pygame.sprite.Sprite):
-    """The main player class with running animation."""
+    """The main player class with running and jumping animations."""
     def __init__(self, x, y, width, height, name):
         super().__init__()
-        # Load the player running animation frames
+        
+        # Load running animation frames
         self.frames = [pygame.image.load(f'running-game-animations/running/frame-{i}.png').convert_alpha() for i in range(1, 7)]
+        self.frames = [pygame.transform.scale(frame, (width, height)) for frame in self.frames]
+
+        # Load jump animation frames
+        self.jump_up_frame = pygame.image.load("running-game-animations/jump/jump-up.png").convert_alpha()
+        self.jump_fall_frame = pygame.image.load("running-game-animations/jump/jump-fall.png").convert_alpha()
+        self.jump_up_frame = pygame.transform.scale(self.jump_up_frame, (width, height))
+        self.jump_fall_frame = pygame.transform.scale(self.jump_fall_frame, (width, height))
+
+        # Load life icon
+        self.life_icon = pygame.image.load("running-game-animations/lives/icon.png").convert_alpha()
+        self.life_icon = pygame.transform.scale(self.life_icon, (30, 30))  # Adjust size
+
+        # Initial sprite setup
         self.current_frame = 0
-        self.image = pygame.transform.scale(self.frames[self.current_frame], (width, height))
+        self.image = self.frames[self.current_frame]
         self.rect = self.image.get_rect(topleft=(x, y))
-        self.x_velocity, self.y_velocity, self.jumping, self.angle, self.name = 0, 0, True, 0, name
+
+        # Movement properties
+        self.x_velocity, self.y_velocity = 0, 0
+        self.jumping = False
+        self.facing_right = True  # Track movement direction
+        self.name = name
         self.lives = 3
-        self.animation_speed = 5  # Speed of animation frames switching
+
+        # Animation properties
+        self.animation_speed = 5
         self.animation_counter = 0
 
     def update(self, controller):
+        """Update player movement and animations."""
         if controller["up"] and not self.jumping:
-            self.y_velocity, self.jumping = -20, True
+            self.y_velocity = -18
+            self.jumping = True
+
         if controller["left"]:
-            self.x_velocity = -2  # Move left slowly
-        if controller["right"]:
-            self.x_velocity = 2  # Move right slowly
+            self.x_velocity = -3
+            self.facing_right = False  # Moving left
+        elif controller["right"]:
+            self.x_velocity = 3
+            self.facing_right = True  # Moving right
+
+        # Apply movement and gravity
         self.rect.x += self.x_velocity
         self.rect.y += self.y_velocity
-        self.y_velocity, self.x_velocity = self.y_velocity + 0.8, self.x_velocity * 0.95
-        if self.rect.bottom > GROUND_Y:
-            self.rect.bottom, self.jumping, self.y_velocity = GROUND_Y, False, 0
+        self.y_velocity += 0.8  # Gravity
+        self.x_velocity *= 0.95  # Slow horizontal movement
 
-        # Animate running frames
-        self.animation_counter += 1
-        if self.animation_counter >= self.animation_speed:
-            self.animation_counter = 0
-            self.current_frame = (self.current_frame + 1) % len(self.frames)  # Loop through the frames
-            self.image = pygame.transform.scale(self.frames[self.current_frame], self.rect.size)
+        # Check if landed
+        if self.rect.bottom > GROUND_Y:
+            self.rect.bottom = GROUND_Y
+            self.jumping = False
+            self.y_velocity = 0
+
+        # Animate player sprite
+        self.animate()
+
+    def animate(self):
+        """Handle animation transitions for running and jumping."""
+        if self.jumping:
+            # Use jump animations
+            self.image = self.jump_up_frame if self.y_velocity < 0 else self.jump_fall_frame
+        else:
+            # Running animation when on the ground
+            self.animation_counter += 1
+            if self.animation_counter >= self.animation_speed:
+                self.animation_counter = 0
+                self.current_frame = (self.current_frame + 1) % len(self.frames)
+                self.image = pygame.transform.scale(self.frames[self.current_frame], self.rect.size)
+
+                # Flip image if moving left
+                if not self.facing_right:
+                    self.image = pygame.transform.flip(self.image, True, False)
 
     def respawn(self):
         self.rect.x, self.rect.y, self.x_velocity, self.y_velocity, self.jumping = 50, -50, 0, 0, True  # Spawn at the left
-    
+
     def draw(self, screen):
         """Draw the player and their name."""
         screen.blit(self.image, self.rect.topleft)
         name_surface = font.render(self.name, True, BLACK)
         screen.blit(name_surface, name_surface.get_rect(center=(self.rect.centerx, self.rect.top - 10)))
+        # Draw life icons
+        for i in range(self.lives):
+            screen.blit(self.life_icon, (10 + (i * 35), 10))  # Offset each icon
 
 class Obstacle(pygame.sprite.Sprite):
     """The obstacle class."""
