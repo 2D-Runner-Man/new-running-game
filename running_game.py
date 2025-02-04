@@ -88,8 +88,10 @@ class Player(pygame.sprite.Sprite):
     def animate(self):
         """Handle animation transitions for running and jumping."""
         if self.jumping:
-            # Use jump animations
+            # Use jump animations and flip if moving left
             self.image = self.jump_up_frame if self.y_velocity < 0 else self.jump_fall_frame
+            if not self.facing_right:
+                self.image = pygame.transform.flip(self.image, True, False)
         else:
             # Running animation when on the ground
             self.animation_counter += 1
@@ -101,6 +103,7 @@ class Player(pygame.sprite.Sprite):
                 # Flip image if moving left
                 if not self.facing_right:
                     self.image = pygame.transform.flip(self.image, True, False)
+
 
     def respawn(self):
         self.rect.x, self.rect.y, self.x_velocity, self.y_velocity, self.jumping = 50, -50, 0, 0, True  # Spawn at the left
