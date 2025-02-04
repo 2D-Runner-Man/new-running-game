@@ -38,7 +38,7 @@ class Player(pygame.sprite.Sprite):
         self.jump_fall_frame = pygame.transform.scale(self.jump_fall_frame, (width, height))
 
         # Load life icon
-        self.life_icon = pygame.image.load("running-game-animations/lives/icon.png").convert_alpha()
+        self.life_icon = pygame.image.load("running-game-animations/lives/lives.png").convert_alpha()
         self.life_icon = pygame.transform.scale(self.life_icon, (30, 30))  # Adjust size
 
         # Initial sprite setup
@@ -106,13 +106,12 @@ class Player(pygame.sprite.Sprite):
         self.rect.x, self.rect.y, self.x_velocity, self.y_velocity, self.jumping = 50, -50, 0, 0, True  # Spawn at the left
 
     def draw(self, screen):
-        """Draw the player and their name."""
+        """Draw the player, their name, and life icons in the top-right corner."""
         screen.blit(self.image, self.rect.topleft)
+
+        # Draw player name
         name_surface = font.render(self.name, True, BLACK)
         screen.blit(name_surface, name_surface.get_rect(center=(self.rect.centerx, self.rect.top - 10)))
-        # Draw life icons
-        for i in range(self.lives):
-            screen.blit(self.life_icon, (10 + (i * 35), 10))  # Offset each icon
 
 class Obstacle(pygame.sprite.Sprite):
     """The obstacle class."""
@@ -205,8 +204,16 @@ def game_loop(player_name):
         obstacles.draw(screen)
         coins.draw(screen)
         
-        # Display Score and Lives
-        screen.blit(font.render(f"Lives: {player.lives}", True, BLACK), (10, 10))
+        # Display Lives in the Top Left Corner
+        lives_text = font.render("Lives:", True, WHITE)
+        pygame.draw.rect(screen, BLACK, (5, 5, 170, 35), border_radius=5)
+        screen.blit(lives_text, (10, 10))  # Position "Lives:" text 
+
+        # Draw life icons next to the text
+        start_x = 80  # Adjust spacing
+        for _ in range(player.lives):
+            screen.blit(player.life_icon, (start_x, 7))
+            start_x += 30  # Space out the icons
         screen.blit(font.render(f"Score: {score}", True, BLACK), (10, 40))
         pygame.display.flip()
 
