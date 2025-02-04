@@ -116,16 +116,12 @@ class Player(pygame.sprite.Sprite):
         name_surface = font.render(self.name, True, BLACK)
         screen.blit(name_surface, name_surface.get_rect(center=(self.rect.centerx, self.rect.top - 10)))
 
-class Obstacle(pygame.sprite.Sprite):
-    """The obstacle class."""
-    def __init__(self, x, y, width, height, speed, color=None, image_path=None):
+class Coin(pygame.sprite.Sprite):
+    """The coin class."""
+    def __init__(self, x, y, width, height, speed):
         super().__init__()
-        if image_path:
-            self.image = pygame.image.load('images/coin.jpg').convert_alpha()
-            self.image = pygame.transform.scale(self.image, (width, height))
-        else:
-            self.image = pygame.Surface((width, height))
-            self.image.fill(color or (0, 0, 0))
+        self.image = pygame.image.load('images/coin.png').convert_alpha()
+        self.image = pygame.transform.scale(self.image, (width, height))
         self.rect = self.image.get_rect(topleft=(x, y))
         self.speed = speed
 
@@ -133,6 +129,21 @@ class Obstacle(pygame.sprite.Sprite):
         self.rect.x -= self.speed
         if self.rect.right < 0:
             self.kill()
+
+class Obstacle(pygame.sprite.Sprite):
+    """The obstacle class."""
+    def __init__(self, x, y, width, height, speed):
+        super().__init__()
+        self.image = pygame.image.load('images/rock-obstacle.png').convert_alpha()
+        self.image = pygame.transform.scale(self.image, (width, height))
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.speed = speed
+
+    def update(self):
+        self.rect.x -= self.speed
+        if self.rect.right < 0:
+            self.kill()
+
 
 def game_loop(player_name):
     """The main game loop."""
@@ -186,8 +197,9 @@ def game_loop(player_name):
                 obstacle_x = SCREEN_WIDTH + random.randint(0, 200)
                 obstacle_y = GROUND_Y - 75
                 coin_y = GROUND_Y - 175
-                obstacles.add(Obstacle(obstacle_x, obstacle_y, 75, 75, speed=5, color=GREEN))
-                coins.add(Obstacle(obstacle_x, coin_y, 50, 50, speed=5, image_path="new-running-game/coin.png"))
+                obstacles.add(Obstacle(obstacle_x, obstacle_y, 75, 75, speed=5))
+                coins.add(Coin(obstacle_x, coin_y, 50, 50, speed=5))
+
 
         if pygame.sprite.spritecollide(player, obstacles, False):
             player.respawn()
