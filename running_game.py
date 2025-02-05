@@ -122,6 +122,8 @@ class Coin(pygame.sprite.Sprite):
         super().__init__()
         self.image = pygame.image.load('images/coin.png').convert_alpha()
         self.image = pygame.transform.scale(self.image, (width, height))
+        self.sparkle_image = pygame.image.load('images/coin-sparkle.png').convert_alpha()
+        self.sparkle_image = pygame.transform.scale(self.sparkle_image, (width, height))
         self.rect = self.image.get_rect(topleft=(x, y))
         self.speed = speed
 
@@ -143,6 +145,21 @@ class SuperCoin(pygame.sprite.Sprite):
         self.rect.x -= self.speed
         if self.rect.right < 0:
             self.kill()
+
+class Sparkle(pygame.sprite.Sprite):
+    """A short-lived sparkle effect after collecting a coin."""
+    def __init__(self, x, y, width, height):
+        super().__init__()
+        self.image = pygame.image.load('images/coin-sparkle.png').convert_alpha()
+        self.image = pygame.transform.scale(self.image, (width, height))
+        self.rect = self.image.get_rect(center=(x, y))
+        self.lifetime = 15  # Frames before disappearing
+
+    def update(self):
+        self.lifetime -= 1
+        if self.lifetime <= 0:
+            self.kill()
+
 
 class Obstacle(pygame.sprite.Sprite):
     """The obstacle class."""
@@ -170,6 +187,7 @@ def game_loop(player_name):
     obstacles = pygame.sprite.Group()
     coins = pygame.sprite.Group()
     super_coins = pygame.sprite.Group()
+    sparkles = pygame.sprite.Group()
     controller, obstacle_timer, spawn_interval, score, respawn_timer = {"left": False, "right": False, "up": False}, 0, 90, 0, 0
 
     while player.lives > 0:
@@ -224,11 +242,19 @@ def game_loop(player_name):
             player.lives -= 1
             respawn_timer = 60  # 1 second delay before spawning obstacles
 
+        # if pygame.sprite.spritecollide(player, coins, True):
+        #     score += 1
+        
+        # if pygame.sprite.spritecollide(player, super_coins, True):
+        #     score += 5
+
         if pygame.sprite.spritecollide(player, coins, True):
             score += 1
-        
+            sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 30, 30))  # Show sparkle
+
         if pygame.sprite.spritecollide(player, super_coins, True):
             score += 5
+            sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 40, 40))  # Bigger sparkle
 
         if respawn_timer > 0:
             respawn_timer -= 1
