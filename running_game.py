@@ -29,13 +29,13 @@ class Player(pygame.sprite.Sprite):
         
         # Load running animation frames
         self.frames = [pygame.image.load(f'running-game-animations/running/frame-{i}.png').convert_alpha() for i in range(1, 7)]
-        self.frames = [pygame.transform.scale(frame, (width, height)) for frame in self.frames]
+        self.frames = [pygame.transform.scale(frame, (width, height + 30)) for frame in self.frames]
 
         # Load jump animation frames
         self.jump_up_frame = pygame.image.load("running-game-animations/jump/jump-up.png").convert_alpha()
         self.jump_fall_frame = pygame.image.load("running-game-animations/jump/jump-fall.png").convert_alpha()
-        self.jump_up_frame = pygame.transform.scale(self.jump_up_frame, (width, height))
-        self.jump_fall_frame = pygame.transform.scale(self.jump_fall_frame, (width, height))
+        self.jump_up_frame = pygame.transform.scale(self.jump_up_frame, (width + 5, height + 30))
+        self.jump_fall_frame = pygame.transform.scale(self.jump_fall_frame, (width + 5, height + 30))
 
         # Load life icon
         self.life_icon = pygame.image.load("running-game-animations/lives/lives.png").convert_alpha()
@@ -51,7 +51,7 @@ class Player(pygame.sprite.Sprite):
         self.jumping = False
         self.facing_right = True  # Track movement direction
         self.name = name
-        self.lives = 3
+        self.lives = 5 # Player live amount
 
         # Animation properties
         self.animation_speed = 5
@@ -221,7 +221,7 @@ def game_loop(player_name):
         
         # Display Lives in the Top Left Corner
         lives_text = font.render("Lives:", True, WHITE)
-        pygame.draw.rect(screen, BLACK, (5, 5, 170, 35), border_radius=5)
+        pygame.draw.rect(screen, BLACK, (5, 5, 230, 35), border_radius=5) # Background for lives
         screen.blit(lives_text, (10, 10))  # Position "Lives:" text 
 
         # Draw life icons next to the text
