@@ -35,7 +35,7 @@ class Player(pygame.sprite.Sprite):
         self.jump_up_frame = pygame.image.load("running-game-animations/jump/jump-up.png").convert_alpha()
         self.jump_fall_frame = pygame.image.load("running-game-animations/jump/jump-fall.png").convert_alpha()
         self.jump_up_frame = pygame.transform.scale(self.jump_up_frame, (width + 5, height + 30))
-        self.jump_fall_frame = pygame.transform.scale(self.jump_fall_frame, (width + 5, height + 30))
+        self.jump_fall_frame = pygame.transform.scale(self.jump_fall_frame, (width + 7, height + 30))
 
         # Load life icon
         self.life_icon = pygame.image.load("running-game-animations/lives/lives.png").convert_alpha()
@@ -130,6 +130,20 @@ class Coin(pygame.sprite.Sprite):
         if self.rect.right < 0:
             self.kill()
 
+class SuperCoin(pygame.sprite.Sprite):
+    """The coin class."""
+    def __init__(self, x, y, width, height, speed):
+        super().__init__()
+        self.image = pygame.image.load('images/super-coin.png').convert_alpha()
+        self.image = pygame.transform.scale(self.image, (width, height))
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.speed = speed
+
+    def update(self):
+        self.rect.x -= self.speed
+        if self.rect.right < 0:
+            self.kill()
+
 class Obstacle(pygame.sprite.Sprite):
     """The obstacle class."""
     def __init__(self, x, y, width, height, speed):
@@ -155,6 +169,7 @@ def game_loop(player_name):
     all_sprites = pygame.sprite.Group(player)
     obstacles = pygame.sprite.Group()
     coins = pygame.sprite.Group()
+    super_coins = pygame.sprite.Group()
     controller, obstacle_timer, spawn_interval, score, respawn_timer = {"left": False, "right": False, "up": False}, 0, 90, 0, 0
 
     while player.lives > 0:
@@ -189,6 +204,7 @@ def game_loop(player_name):
         all_sprites.update(controller)
         obstacles.update()
         coins.update()
+        super_coins.update()
 
         if respawn_timer == 0:
             obstacle_timer += 1
@@ -197,8 +213,10 @@ def game_loop(player_name):
                 obstacle_x = SCREEN_WIDTH + random.randint(0, 200)
                 obstacle_y = GROUND_Y - 75
                 coin_y = GROUND_Y - 175
-                obstacles.add(Obstacle(obstacle_x, obstacle_y, 75, 75, speed=5))
-                coins.add(Coin(obstacle_x, coin_y, 50, 50, speed=5))
+                super_coin_y = GROUND_Y - 175
+                obstacles.add(Obstacle(obstacle_x, obstacle_y, 75, 75, speed=5)) # Spawns Obstacles
+                coins.add(Coin(obstacle_x, coin_y, 50, 50, speed=10)) # Spawns Coins
+                super_coins.add(SuperCoin(obstacle_x, super_coin_y, 50, 50, speed=2)) # Spawns Coins
 
 
         if pygame.sprite.spritecollide(player, obstacles, False):
@@ -208,6 +226,9 @@ def game_loop(player_name):
 
         if pygame.sprite.spritecollide(player, coins, True):
             score += 1
+        
+        if pygame.sprite.spritecollide(player, super_coins, True):
+            score += 5
 
         if respawn_timer > 0:
             respawn_timer -= 1
@@ -218,6 +239,7 @@ def game_loop(player_name):
         player.draw(screen)
         obstacles.draw(screen)
         coins.draw(screen)
+        super_coins.draw(screen)
         
         # Display Lives in the Top Left Corner
         lives_text = font.render("Lives:", True, WHITE)
