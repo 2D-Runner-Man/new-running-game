@@ -7,7 +7,9 @@
         "kickstart": "cd frontend && npm i && npm run build && cd ../server && npm i && npm run migrate && npm run seed",
         "build": "echo 'Python project, no build step needed'",
         "start": "python running_game.py",
-        "dev": "nodemon index.js"
+        "dev": "nodemon index.js",
+        "migrate": "npx knex migrate:latest --knexfile=server/knexfile.js",
+        "seed": "npx knex seed:run --knexfile=server/knexfile.js"
     },
     "dependencies": {
         "dotenv": "^16.4.7",
