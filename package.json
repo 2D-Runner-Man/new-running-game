@@ -4,18 +4,21 @@
     "description": "A simple running game built by me.",
     "main": "server/index.js",
     "scripts": {
-      "kickstart": "node index.js",
-      "start": "node index.js",
-      "dev": "nodemon index.js"
+        "kickstart": "cd frontend && npm i && npm run build && cd ../server && npm i && npm run migrate && npm run seed",
+        "build": "echo 'Python project, no build step needed'",
+        "start": "python running_game.py",
+        "dev": "nodemon index.js"
     },
     "dependencies": {
-      "express": "^4.18.2",
-      "sqlite3": "^5.1.6"
+        "dotenv": "^16.4.7",
+        "express": "^4.18.2",
+        "knex": "^3.1.0",
+        "pg": "^8.13.1",
+        "sqlite3": "^5.1.6"
     },
     "devDependencies": {
-      "nodemon": "^3.0.1"
+        "nodemon": "^3.0.1"
     },
     "author": "Jahmari Maxwell",
     "license": "MIT"
-  }
-  
+}

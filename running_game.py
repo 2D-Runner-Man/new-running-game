@@ -182,6 +182,12 @@ def game_loop(player_name):
     mountain_bg = pygame.transform.scale(mountain_bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
     bg_x1, bg_x2 = 0, SCREEN_WIDTH  # Positions for two background images to create a seamless loop
 
+    # Load platform image
+    platform_image = pygame.image.load("images/platform.png").convert_alpha()
+    platform_image = pygame.transform.scale(platform_image, (SCREEN_WIDTH, 50))  # Adjust height if needed
+    # Initial positions for scrolling platforms
+    platform_x1, platform_x2 = 0, SCREEN_WIDTH
+
     player = Player(50, GROUND_Y - 50, 50, 50, name=player_name)
     all_sprites = pygame.sprite.Group(player)
     obstacles = pygame.sprite.Group()
@@ -206,6 +212,7 @@ def game_loop(player_name):
                     controller["up"] = key_state
                 elif event.key == pygame.K_ESCAPE and key_state:
                     return
+                
         # Scroll the background
         bg_x1 -= 2  # Adjust the speed of the scrolling
         bg_x2 -= 2
@@ -213,6 +220,14 @@ def game_loop(player_name):
             bg_x1 = SCREEN_WIDTH
         if bg_x2 <= -SCREEN_WIDTH:
             bg_x2 = SCREEN_WIDTH
+
+        # Scroll the platform
+        platform_x1 -= 2
+        platform_x2 -= 2
+        if platform_x1 <= -SCREEN_WIDTH:
+            platform_x1 = SCREEN_WIDTH
+        if platform_x2 <= -SCREEN_WIDTH:
+            platform_x2 = SCREEN_WIDTH
 
         # Draw the background
         screen.blit(mountain_bg, (bg_x1, 0))
@@ -234,19 +249,13 @@ def game_loop(player_name):
                 super_coin_y = GROUND_Y - 175
                 obstacles.add(Obstacle(obstacle_x, obstacle_y, 75, 75, speed=5)) # Spawns Obstacles
                 coins.add(Coin(obstacle_x, coin_y, 50, 50, speed=10)) # Spawns Coins
-                super_coins.add(SuperCoin(obstacle_x, super_coin_y, 50, 50, speed=2)) # Spawns Coins
+                super_coins.add(SuperCoin(obstacle_x, super_coin_y, 50, 50, speed=3)) # Spawns Super Coins
 
 
         if pygame.sprite.spritecollide(player, obstacles, False):
             player.respawn()
             player.lives -= 1
-            respawn_timer = 60  # 1 second delay before spawning obstacles
-
-        # if pygame.sprite.spritecollide(player, coins, True):
-        #     score += 1
-        
-        # if pygame.sprite.spritecollide(player, super_coins, True):
-        #     score += 5
+            respawn_timer = 120  # 2 second delay before spawning obstacles
 
         if pygame.sprite.spritecollide(player, coins, True):
             score += 1
@@ -258,9 +267,13 @@ def game_loop(player_name):
 
         if respawn_timer > 0:
             respawn_timer -= 1
+        
+         # Draw the scrolling platforms
+        screen.blit(platform_image, (platform_x1, GROUND_Y))
+        screen.blit(platform_image, (platform_x2, GROUND_Y))
 
         # Draws everything
-        pygame.draw.line(screen, BLACK, (0, GROUND_Y), (SCREEN_WIDTH, GROUND_Y), 10)
+        # pygame.draw.line(screen, BLACK, (0, GROUND_Y), (SCREEN_WIDTH, GROUND_Y), 10)
         all_sprites.draw(screen)
         player.draw(screen)
         obstacles.draw(screen)
