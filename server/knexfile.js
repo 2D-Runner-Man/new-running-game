@@ -19,6 +19,7 @@ module.exports = {
       database: 'running_game_database',
     },
     migrations: {
+      // tableName: '',
       directory: migrationsDirectory,
     },
     seeds: {

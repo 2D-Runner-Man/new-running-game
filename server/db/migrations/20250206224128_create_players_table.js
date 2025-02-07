@@ -7,10 +7,14 @@ exports.up = function(knex) {
       table.increments('id').primary();
       table.string('name').notNullable();
       table.integer('score').defaultTo(0);
-      table.timestamps(true, true);
+      table.integer('lives').defaultTo(3);
     });
   };
-  
+
+/**
+ * @param { import("knex").Knex } knex
+ * @returns { Promise<void> }
+ */
   exports.down = function(knex) {
     return knex.schema.dropTableIfExists('players');
   };

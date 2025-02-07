@@ -5,6 +5,18 @@ import random
 from screens.start_screen import start_screen
 from screens.game_over_screen import game_over_screen
 from screens.name_input_screen import name_input_screen
+import psycopg2
+
+# Database connection
+conn = psycopg2.connect(
+    dbname="running_game_database",
+    user="jahmari",
+    password="1234",
+    host="127.0.0.1",
+    port="5432"
+)
+cursor = conn.cursor()
+
 
 # Initialize pygame
 pygame.init()
@@ -174,7 +186,14 @@ class Obstacle(pygame.sprite.Sprite):
         self.rect.x -= self.speed
         if self.rect.right < 0:
             self.kill()
+def save_player_to_db(player_name):
+        """Save player to the database if not already present."""
+        cursor.execute("SELECT * FROM players WHERE name = %s", (player_name,))
+        existing_player = cursor.fetchone()
 
+        if not existing_player:
+            cursor.execute("INSERT INTO players (name) VALUES (%s)", (player_name,))
+            conn.commit()
 
 def game_loop(player_name):
     """The main game loop."""
@@ -251,6 +270,11 @@ def game_loop(player_name):
                 coins.add(Coin(obstacle_x, coin_y, 50, 50, speed=10)) # Spawns Coins
                 super_coins.add(SuperCoin(obstacle_x, super_coin_y, 50, 50, speed=3)) # Spawns Super Coins
 
+        def update_score_in_db(player_name, score):
+            """Update the player's score in the database."""
+            cursor.execute("UPDATE players SET score = %s WHERE name = %s", (score, player_name))
+            conn.commit()
+
 
         if pygame.sprite.spritecollide(player, obstacles, False):
             player.respawn()
@@ -259,11 +283,14 @@ def game_loop(player_name):
 
         if pygame.sprite.spritecollide(player, coins, True):
             score += 1
-            sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 30, 30))  # Show sparkle
+            sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 30, 30))
+            update_score_in_db(player_name, score)
+
 
         if pygame.sprite.spritecollide(player, super_coins, True):
             score += 5
-            sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 40, 40))  # Bigger sparkle
+            sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 40, 40))
+              # Bigger sparkle
 
         if respawn_timer > 0:
             respawn_timer -= 1
@@ -301,4 +328,8 @@ def game_loop(player_name):
 start_screen(screen, font, large_font)
 player_name = name_input_screen(screen, font)
 if player_name:  # Only proceed if a valid name is entered
+    save_player_to_db(player_name)  # Save player name to DB
     game_loop(player_name)
+
+conn.close()
+
