@@ -27,8 +27,17 @@ pygame.mixer.init()
 
 # Load and play background music
 pygame.mixer.music.load("music/running-game-music.mp3")  # Replace with your actual file name
-pygame.mixer.music.set_volume(0.5)  # Adjust volume (0.0 to 1.0)
+pygame.mixer.music.set_volume(0.6)  # Adjust volume (0.0 to 1.0)
 pygame.mixer.music.play(-1)  # Loop indefinitely
+
+# Load coin sound effect
+coin_sound = pygame.mixer.Sound("music/coin-get.mp3")
+coin_sound.set_volume(0.3)  # Lower the volume of the coin sound
+
+# Function to play coin sound
+def play_coin_sound():
+    pygame.mixer.music.set_volume(0.5)
+    coin_sound.play()
 
 # Screen setup
 SCREEN_WIDTH, SCREEN_HEIGHT = 900, 500
@@ -242,6 +251,7 @@ def game_loop(player_name):
     # Load platform image
     platform_image = pygame.image.load("images/platform.png").convert_alpha()
     platform_image = pygame.transform.scale(platform_image, (SCREEN_WIDTH, 50))  # Adjust height if needed
+
     # Initial positions for scrolling platforms
     platform_x1, platform_x2 = 0, SCREEN_WIDTH
 
@@ -326,12 +336,14 @@ def game_loop(player_name):
             score += 100
             update_score_in_db(player_name, score)
             sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 50, 50))
+            play_coin_sound()
             
         if pygame.sprite.spritecollide(player, super_coins, True):
             score += 500
             # Bigger sparkle
             update_score_in_db(player_name, score)
             sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 60, 60))
+            play_coin_sound()
 
         if respawn_timer > 0:
             respawn_timer -= 1
@@ -364,6 +376,7 @@ def game_loop(player_name):
 
         clock.tick(60) # Cap the frame rate
 
+    pygame.mixer.music.stop() # Stops music
     game_over_screen(screen, font, large_font)
 
 # Main game flow
