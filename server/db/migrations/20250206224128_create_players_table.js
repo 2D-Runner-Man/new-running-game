@@ -7,7 +7,6 @@ exports.up = function(knex) {
       table.increments('id').primary();
       table.string('name').notNullable();
       table.integer('score').defaultTo(0);
-      table.integer('lives').defaultTo(3);
     });
   };
 

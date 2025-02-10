@@ -3,8 +3,9 @@ import sys
 import random
 # Importing from folders
 from screens.start_screen import start_screen
-from screens.game_over_screen import game_over_screen
+from screens.controls_screen import controls_screen
 from screens.name_input_screen import name_input_screen
+from screens.game_over_screen import game_over_screen
 import psycopg2
 
 # Database connection
@@ -21,6 +22,14 @@ cursor = conn.cursor()
 # Initialize pygame
 pygame.init()
 
+# Initialize Pygame mixer for sound
+pygame.mixer.init()
+
+# Load and play background music
+pygame.mixer.music.load("music/running-game-music.mp3")  # Replace with your actual file name
+pygame.mixer.music.set_volume(0.5)  # Adjust volume (0.0 to 1.0)
+pygame.mixer.music.play(-1)  # Loop indefinitely
+
 # Screen setup
 SCREEN_WIDTH, SCREEN_HEIGHT = 900, 500
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -35,58 +44,68 @@ font = pygame.font.Font(None, 36)
 large_font = pygame.font.Font(None, 60)
 
 class Player(pygame.sprite.Sprite):
-    """The main player class with running and jumping animations."""
+    """The main player class with running, jumping, and idle animations."""
     def __init__(self, x, y, width, height, name):
         super().__init__()
-        
+
         # Load running animation frames
-        self.frames = [pygame.image.load(f'running-game-animations/running/frame-{i}.png').convert_alpha() for i in range(1, 7)]
-        self.frames = [pygame.transform.scale(frame, (width, height + 30)) for frame in self.frames]
+        self.run_frames = [pygame.image.load(f'running-game-animations/running/frame-{i}.png').convert_alpha() for i in range(1, 7)]
+        self.run_frames = [pygame.transform.scale(frame, (width, height + 30)) for frame in self.run_frames]
+
+        # Load idle animation frames
+        self.idle_frames = [pygame.image.load(f'running-game-animations/idle/frame-{i}.png').convert_alpha() for i in range(1, 3)]
+        self.idle_frames = [pygame.transform.scale(frame, (width + 4, height + 30)) for frame in self.idle_frames]
 
         # Load jump animation frames
         self.jump_up_frame = pygame.image.load("running-game-animations/jump/jump-up.png").convert_alpha()
         self.jump_fall_frame = pygame.image.load("running-game-animations/jump/jump-fall.png").convert_alpha()
-        self.jump_up_frame = pygame.transform.scale(self.jump_up_frame, (width + 5, height + 30))
-        self.jump_fall_frame = pygame.transform.scale(self.jump_fall_frame, (width + 7, height + 30))
+        self.jump_up_frame = pygame.transform.scale(self.jump_up_frame, (width + 6, height + 30))
+        self.jump_fall_frame = pygame.transform.scale(self.jump_fall_frame, (width + 8, height + 30))
 
         # Load life icon
         self.life_icon = pygame.image.load("running-game-animations/lives/lives.png").convert_alpha()
-        self.life_icon = pygame.transform.scale(self.life_icon, (30, 30))  # Adjust size
+        self.life_icon = pygame.transform.scale(self.life_icon, (30, 30))
 
         # Initial sprite setup
         self.current_frame = 0
-        self.image = self.frames[self.current_frame]
+        self.image = self.idle_frames[self.current_frame]  # Default to idle
         self.rect = self.image.get_rect(topleft=(x, y))
 
         # Movement properties
         self.x_velocity, self.y_velocity = 0, 0
         self.jumping = False
-        self.facing_right = True  # Track movement direction
+        self.facing_right = True
         self.name = name
-        self.lives = 5 # Player live amount
+        self.lives = 5
 
         # Animation properties
         self.animation_speed = 5
         self.animation_counter = 0
+        self.is_moving = False  # Track movement state
 
     def update(self, controller):
         """Update player movement and animations."""
+        self.is_moving = False  # Reset movement state
+
         if controller["up"] and not self.jumping:
             self.y_velocity = -18
             self.jumping = True
 
         if controller["left"]:
             self.x_velocity = -3
-            self.facing_right = False  # Moving left
+            self.facing_right = False
+            self.is_moving = True  # Player is moving
+
         elif controller["right"]:
             self.x_velocity = 3
-            self.facing_right = True  # Moving right
+            self.facing_right = True
+            self.is_moving = True  # Player is moving
 
         # Apply movement and gravity
         self.rect.x += self.x_velocity
         self.rect.y += self.y_velocity
         self.y_velocity += 0.8  # Gravity
-        self.x_velocity *= 0.95  # Slow horizontal movement
+        self.x_velocity *= 0.95  # Slow down horizontal movement
 
         # Check if landed
         if self.rect.bottom > GROUND_Y:
@@ -98,33 +117,46 @@ class Player(pygame.sprite.Sprite):
         self.animate()
 
     def animate(self):
-        """Handle animation transitions for running and jumping."""
+        """Handle animation transitions for running, jumping, and idle states."""
         if self.jumping:
             # Use jump animations and flip if moving left
             self.image = self.jump_up_frame if self.y_velocity < 0 else self.jump_fall_frame
             if not self.facing_right:
                 self.image = pygame.transform.flip(self.image, True, False)
-        else:
-            # Running animation when on the ground
+
+        elif self.is_moving:
+            # Running animation
             self.animation_counter += 1
             if self.animation_counter >= self.animation_speed:
                 self.animation_counter = 0
-                self.current_frame = (self.current_frame + 1) % len(self.frames)
-                self.image = pygame.transform.scale(self.frames[self.current_frame], self.rect.size)
+                self.current_frame = (self.current_frame + 1) % len(self.run_frames)
+                self.image = pygame.transform.scale(self.run_frames[self.current_frame], self.rect.size)
 
                 # Flip image if moving left
                 if not self.facing_right:
                     self.image = pygame.transform.flip(self.image, True, False)
 
+        else:
+            # Idle animation
+            self.animation_counter += 1
+            if self.animation_counter >= self.animation_speed * 2:  # Slower idle animation
+                self.animation_counter = 0
+                self.current_frame = (self.current_frame + 1) % len(self.idle_frames)
+                self.image = pygame.transform.scale(self.idle_frames[self.current_frame], self.rect.size)
+
+                 # Flip idle frame if facing left
+                if not self.facing_right:
+                    self.image = pygame.transform.flip(self.image, True, False)
 
     def respawn(self):
-        self.rect.x, self.rect.y, self.x_velocity, self.y_velocity, self.jumping = 50, -50, 0, 0, True  # Spawn at the left
+        """Respawn player at a designated location."""
+        self.rect.x, self.rect.y = 50, -50
+        self.x_velocity, self.y_velocity = 0, 0
+        self.jumping = True
 
     def draw(self, screen):
-        """Draw the player, their name, and life icons in the top-right corner."""
+        """Draw the player and their name."""
         screen.blit(self.image, self.rect.topleft)
-
-        # Draw player name
         name_surface = font.render(self.name, True, BLACK)
         screen.blit(name_surface, name_surface.get_rect(center=(self.rect.centerx, self.rect.top - 10)))
 
@@ -186,6 +218,7 @@ class Obstacle(pygame.sprite.Sprite):
         self.rect.x -= self.speed
         if self.rect.right < 0:
             self.kill()
+
 def save_player_to_db(player_name):
         """Save player to the database if not already present."""
         cursor.execute("SELECT * FROM players WHERE name = %s", (player_name,))
@@ -193,6 +226,11 @@ def save_player_to_db(player_name):
 
         if not existing_player:
             cursor.execute("INSERT INTO players (name) VALUES (%s)", (player_name,))
+            conn.commit()
+
+def update_score_in_db(player_name, score):
+            """Update the player's score in the database."""
+            cursor.execute("UPDATE players SET score = %s WHERE name = %s", (score, player_name))
             conn.commit()
 
 def game_loop(player_name):
@@ -214,6 +252,7 @@ def game_loop(player_name):
     super_coins = pygame.sprite.Group()
     sparkles = pygame.sprite.Group()
     controller, obstacle_timer, spawn_interval, score, respawn_timer = {"left": False, "right": False, "up": False}, 0, 90, 0, 0
+    last_score_time = pygame.time.get_ticks()  # Track the start time for score increment
 
     while player.lives > 0:
         screen.fill(WHITE)
@@ -257,6 +296,14 @@ def game_loop(player_name):
         obstacles.update()
         coins.update()
         super_coins.update()
+        sparkles.update()
+
+         # Increment score every second
+        current_time = pygame.time.get_ticks()
+        if current_time - last_score_time >= 1000:  # Every 1000 ms (1 second)
+            score += 100
+            last_score_time = current_time
+            update_score_in_db(player_name, score)
 
         if respawn_timer == 0:
             obstacle_timer += 1
@@ -270,27 +317,21 @@ def game_loop(player_name):
                 coins.add(Coin(obstacle_x, coin_y, 50, 50, speed=10)) # Spawns Coins
                 super_coins.add(SuperCoin(obstacle_x, super_coin_y, 50, 50, speed=3)) # Spawns Super Coins
 
-        def update_score_in_db(player_name, score):
-            """Update the player's score in the database."""
-            cursor.execute("UPDATE players SET score = %s WHERE name = %s", (score, player_name))
-            conn.commit()
-
-
         if pygame.sprite.spritecollide(player, obstacles, False):
             player.respawn()
             player.lives -= 1
             respawn_timer = 120  # 2 second delay before spawning obstacles
 
         if pygame.sprite.spritecollide(player, coins, True):
-            score += 1
-            sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 30, 30))
+            score += 100
             update_score_in_db(player_name, score)
-
-
+            sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 50, 50))
+            
         if pygame.sprite.spritecollide(player, super_coins, True):
-            score += 5
-            sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 40, 40))
-              # Bigger sparkle
+            score += 500
+            # Bigger sparkle
+            update_score_in_db(player_name, score)
+            sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 60, 60))
 
         if respawn_timer > 0:
             respawn_timer -= 1
@@ -306,6 +347,7 @@ def game_loop(player_name):
         obstacles.draw(screen)
         coins.draw(screen)
         super_coins.draw(screen)
+        sparkles.draw(screen)
         
         # Display Lives in the Top Left Corner
         lives_text = font.render("Lives:", True, WHITE)
@@ -325,8 +367,9 @@ def game_loop(player_name):
     game_over_screen(screen, font, large_font)
 
 # Main game flow
-start_screen(screen, font, large_font)
+start_screen(screen)
 player_name = name_input_screen(screen, font)
+controls_screen(screen)
 if player_name:  # Only proceed if a valid name is entered
     save_player_to_db(player_name)  # Save player name to DB
     game_loop(player_name)
