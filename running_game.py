@@ -18,7 +18,6 @@ conn = psycopg2.connect(
 )
 cursor = conn.cursor()
 
-
 # Initialize pygame
 pygame.init()
 
@@ -46,11 +45,11 @@ pygame.display.set_caption("2D Running Game")
 
 # Colors and constants
 WHITE, BLACK, RED, GREEN = (255, 255, 255), (32, 32, 32), (255, 0, 0), (0, 255, 0)
-GROUND_Y, clock = 395, pygame.time.Clock()
+GROUND_Y, clock = 425, pygame.time.Clock()
 
 # Fonts
 font = pygame.font.Font(None, 36)
-large_font = pygame.font.Font(None, 60)
+large_font = pygame.font.Font(None, 55)
 
 class Player(pygame.sprite.Sprite):
     """The main player class with running, jumping, and idle animations."""
@@ -93,7 +92,7 @@ class Player(pygame.sprite.Sprite):
         self.is_moving = False  # Track movement state
 
     def update(self, controller):
-        """Update player movement and animations."""
+        """Update player movement and animations while keeping it within screen bounds."""
         self.is_moving = False  # Reset movement state
 
         if controller["up"] and not self.jumping:
@@ -101,12 +100,12 @@ class Player(pygame.sprite.Sprite):
             self.jumping = True
 
         if controller["left"]:
-            self.x_velocity = -3
+            self.x_velocity = -5
             self.facing_right = False
             self.is_moving = True  # Player is moving
 
         elif controller["right"]:
-            self.x_velocity = 3
+            self.x_velocity = 5
             self.facing_right = True
             self.is_moving = True  # Player is moving
 
@@ -116,6 +115,12 @@ class Player(pygame.sprite.Sprite):
         self.y_velocity += 0.8  # Gravity
         self.x_velocity *= 0.95  # Slow down horizontal movement
 
+        # Prevent going off screen horizontally
+        if self.rect.left < 0:
+            self.rect.left = 0
+        if self.rect.right > SCREEN_WIDTH:
+            self.rect.right = SCREEN_WIDTH
+
         # Check if landed
         if self.rect.bottom > GROUND_Y:
             self.rect.bottom = GROUND_Y
@@ -124,6 +129,7 @@ class Player(pygame.sprite.Sprite):
 
         # Animate player sprite
         self.animate()
+
 
     def animate(self):
         """Handle animation transitions for running, jumping, and idle states."""
@@ -173,10 +179,10 @@ class Coin(pygame.sprite.Sprite):
     """The coin class."""
     def __init__(self, x, y, width, height, speed):
         super().__init__()
-        self.image = pygame.image.load('images/coin.png').convert_alpha()
+        self.image = pygame.image.load('images/coins/coin.png').convert_alpha()
         self.image = pygame.transform.scale(self.image, (width, height))
-        self.sparkle_image = pygame.image.load('images/coin-sparkle.png').convert_alpha()
-        self.sparkle_image = pygame.transform.scale(self.sparkle_image, (width, height))
+        # self.sparkle_image = pygame.image.load('images/coins/coin-sparkle.png').convert_alpha()
+        # self.sparkle_image = pygame.transform.scale(self.sparkle_image, (width, height))
         self.rect = self.image.get_rect(topleft=(x, y))
         self.speed = speed
 
@@ -189,7 +195,7 @@ class SuperCoin(pygame.sprite.Sprite):
     """The coin class."""
     def __init__(self, x, y, width, height, speed):
         super().__init__()
-        self.image = pygame.image.load('images/super-coin.png').convert_alpha()
+        self.image = pygame.image.load('images/coins/super-coin.png').convert_alpha()
         self.image = pygame.transform.scale(self.image, (width, height))
         self.rect = self.image.get_rect(topleft=(x, y))
         self.speed = speed
@@ -203,7 +209,7 @@ class Sparkle(pygame.sprite.Sprite):
     """A short-lived sparkle effect after collecting a coin."""
     def __init__(self, x, y, width, height):
         super().__init__()
-        self.image = pygame.image.load('images/coin-sparkle.png').convert_alpha()
+        self.image = pygame.image.load('images/coins/coin-sparkle.png').convert_alpha()
         self.image = pygame.transform.scale(self.image, (width, height))
         self.rect = self.image.get_rect(center=(x, y))
         self.lifetime = 15  # Frames before disappearing
@@ -212,7 +218,6 @@ class Sparkle(pygame.sprite.Sprite):
         self.lifetime -= 1
         if self.lifetime <= 0:
             self.kill()
-
 
 class Obstacle(pygame.sprite.Sprite):
     """The obstacle class."""
@@ -244,13 +249,13 @@ def update_score_in_db(player_name, score):
 
 def game_loop(player_name):
     """The main game loop."""
-    mountain_bg = pygame.image.load("images/mountains.png").convert()
+    mountain_bg = pygame.image.load("images/backgrounds/whole-background.jpg").convert()
     mountain_bg = pygame.transform.scale(mountain_bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
     bg_x1, bg_x2 = 0, SCREEN_WIDTH  # Positions for two background images to create a seamless loop
 
-    # Load platform image
-    platform_image = pygame.image.load("images/platform.png").convert_alpha()
-    platform_image = pygame.transform.scale(platform_image, (SCREEN_WIDTH, 50))  # Adjust height if needed
+    # # Load platform image
+    # platform_image = pygame.image.load("images/green-stage.png").convert_alpha()
+    # platform_image = pygame.transform.scale(platform_image, (SCREEN_WIDTH, 200))  # Adjust height if needed
 
     # Initial positions for scrolling platforms
     platform_x1, platform_x2 = 0, SCREEN_WIDTH
@@ -289,13 +294,13 @@ def game_loop(player_name):
         if bg_x2 <= -SCREEN_WIDTH:
             bg_x2 = SCREEN_WIDTH
 
-        # Scroll the platform
-        platform_x1 -= 2
-        platform_x2 -= 2
-        if platform_x1 <= -SCREEN_WIDTH:
-            platform_x1 = SCREEN_WIDTH
-        if platform_x2 <= -SCREEN_WIDTH:
-            platform_x2 = SCREEN_WIDTH
+        # # Scroll the platform
+        # platform_x1 -= 2
+        # platform_x2 -= 2
+        # if platform_x1 <= -SCREEN_WIDTH:
+        #     platform_x1 = SCREEN_WIDTH
+        # if platform_x2 <= -SCREEN_WIDTH:
+        #     platform_x2 = SCREEN_WIDTH
 
         # Draw the background
         screen.blit(mountain_bg, (bg_x1, 0))
@@ -308,7 +313,7 @@ def game_loop(player_name):
         super_coins.update()
         sparkles.update()
 
-         # Increment score every second
+        # Increment score every second
         current_time = pygame.time.get_ticks()
         if current_time - last_score_time >= 1000:  # Every 1000 ms (1 second)
             score += 100
@@ -317,40 +322,44 @@ def game_loop(player_name):
 
         if respawn_timer == 0:
             obstacle_timer += 1
+            # Adjust spawn speed after reaching a score of 15,000
+            if score >= 15000:
+                spawn_interval = 60  # Faster obstacle spawn rate
+
             if obstacle_timer >= spawn_interval:
                 obstacle_timer = 0
-                obstacle_x = SCREEN_WIDTH + random.randint(0, 200)
+                obstacle_x = SCREEN_WIDTH + random.randint(0, 300)
                 obstacle_y = GROUND_Y - 75
                 coin_y = GROUND_Y - 175
-                super_coin_y = GROUND_Y - 175
-                obstacles.add(Obstacle(obstacle_x, obstacle_y, 75, 75, speed=5)) # Spawns Obstacles
+                super_coin_y = GROUND_Y - 275 # Above regular coin
+                obstacles.add(Obstacle(obstacle_x, obstacle_y, 75, 75, speed=6)) # Spawns Obstacles
                 coins.add(Coin(obstacle_x, coin_y, 50, 50, speed=10)) # Spawns Coins
                 super_coins.add(SuperCoin(obstacle_x, super_coin_y, 50, 50, speed=3)) # Spawns Super Coins
 
         if pygame.sprite.spritecollide(player, obstacles, False):
             player.respawn()
             player.lives -= 1
-            respawn_timer = 120  # 2 second delay before spawning obstacles
+            respawn_timer = 180  # 2 second delay before spawning obstacles
 
         if pygame.sprite.spritecollide(player, coins, True):
             score += 100
             update_score_in_db(player_name, score)
-            sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 50, 50))
+            sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 60, 60))
             play_coin_sound()
             
         if pygame.sprite.spritecollide(player, super_coins, True):
             score += 500
-            # Bigger sparkle
             update_score_in_db(player_name, score)
-            sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 60, 60))
+            # Bigger sparkle
+            sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 70, 70))
             play_coin_sound()
 
         if respawn_timer > 0:
             respawn_timer -= 1
         
-         # Draw the scrolling platforms
-        screen.blit(platform_image, (platform_x1, GROUND_Y))
-        screen.blit(platform_image, (platform_x2, GROUND_Y))
+        #  # Draw the scrolling platforms
+        # screen.blit(platform_image, (platform_x1, GROUND_Y - 75))
+        # screen.blit(platform_image, (platform_x2, GROUND_Y - 75))
 
         # Draws everything
         # pygame.draw.line(screen, BLACK, (0, GROUND_Y), (SCREEN_WIDTH, GROUND_Y), 10)
@@ -377,10 +386,14 @@ def game_loop(player_name):
         clock.tick(60) # Cap the frame rate
 
     pygame.mixer.music.stop() # Stops music
+
     game_over_screen(screen, font, large_font)
+    
+    # Restart game when user clicks restart
+    game_loop(player.name)  # This will restart the game with
 
 # Main game flow
-start_screen(screen)
+start_screen(screen, large_font)
 player_name = name_input_screen(screen, font)
 controls_screen(screen)
 if player_name:  # Only proceed if a valid name is entered
