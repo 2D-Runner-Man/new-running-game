@@ -254,7 +254,7 @@ def game_loop(player_name):
     bg_x1, bg_x2 = 0, SCREEN_WIDTH  # Positions for two background images to create a seamless loop
 
     # # Load platform image
-    # platform_image = pygame.image.load("images/green-stage.png").convert_alpha()
+    # platform_image = pygame.image.load("images/platforms/green-stage.png").convert_alpha()
     # platform_image = pygame.transform.scale(platform_image, (SCREEN_WIDTH, 200))  # Adjust height if needed
 
     # Initial positions for scrolling platforms
@@ -390,6 +390,10 @@ def game_loop(player_name):
     game_over_screen(screen, font, large_font)
     
     # Restart game when user clicks restart
+    pygame.mixer.music.load("music/running-game-music.mp3")  # Replace with your actual file name
+    pygame.mixer.music.set_volume(0.6)  # Adjust volume (0.0 to 1.0)
+    pygame.mixer.music.play(-1)  # Loop indefinitely
+
     game_loop(player.name)  # This will restart the game with
 
 # Main game flow
