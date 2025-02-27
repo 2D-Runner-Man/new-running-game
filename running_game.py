@@ -29,9 +29,22 @@ pygame.mixer.music.load("music/running-game-music.mp3")  # Replace with your act
 pygame.mixer.music.set_volume(0.6)  # Adjust volume (0.0 to 1.0)
 pygame.mixer.music.play(-1)  # Loop indefinitely
 
-# Load coin sound effect
-coin_sound = pygame.mixer.Sound("music/coin-get.mp3")
-coin_sound.set_volume(0.3)  # Lower the volume of the coin sound
+# # Load coin sound effect
+# coin_sound = pygame.mixer.Sound("music/coin-get.mp3")
+# coin_sound.set_volume(0.3)  # Lower the volume of the coin sound
+
+### Attempting to include absolute path instead of "cd running-game"
+
+# import os
+# script_dir = os.path.dirname(os.path.abspath(__file__))  # Get script directory
+# music_path = os.path.join(script_dir, "music/running-game-music.mp3")
+# pygame.mixer.music.load(music_path)
+
+# import os
+# script_dir = os.path.dirname(os.path.abspath(__file__))  # Get script directory
+# coin_path = os.path.join(script_dir, "music/coin-get.mp3")
+# pygame.mixer.music.load(coin_path)
+
 
 # Function to play coin sound
 def play_coin_sound():
