@@ -1,12 +1,27 @@
 import pygame
 import sys
 import random
+import os
 # Importing from folders
 from screens.start_screen import start_screen
 from screens.controls_screen import controls_screen
 from screens.name_input_screen import name_input_screen
 from screens.game_over_screen import game_over_screen
 import psycopg2
+
+
+def set_working_directory():
+    # Get the directory of the running script
+    if getattr(sys, 'frozen', False):  # Check if the app is running as a bundled executable
+        working_dir = sys._MEIPASS  # Get the temporary directory created by PyInstaller
+    else:
+        working_dir = os.path.dirname(os.path.abspath(__file__))  # Use the script's directory if running from source
+    
+    # Set the current working directory to the script's directory
+    os.chdir(working_dir)
+
+# Call the function to set the working directory at the start
+set_working_directory()
 
 # Database connection
 conn = psycopg2.connect(
@@ -21,6 +36,8 @@ cursor = conn.cursor()
 # Initialize pygame
 pygame.init()
 
+os.chdir(os.path.dirname(__file__))
+
 # Initialize Pygame mixer for sound
 pygame.mixer.init()
 
@@ -29,9 +46,9 @@ pygame.mixer.music.load("music/running-game-music.mp3")  # Replace with your act
 pygame.mixer.music.set_volume(0.6)  # Adjust volume (0.0 to 1.0)
 pygame.mixer.music.play(-1)  # Loop indefinitely
 
-# # Load coin sound effect
-# coin_sound = pygame.mixer.Sound("music/coin-get.mp3")
-# coin_sound.set_volume(0.3)  # Lower the volume of the coin sound
+# Load coin sound effect
+coin_sound = pygame.mixer.Sound("music/coin-get.mp3")
+coin_sound.set_volume(0.3)  # Lower the volume of the coin sound
 
 ### Attempting to include absolute path instead of "cd running-game"
 
@@ -45,6 +62,30 @@ pygame.mixer.music.play(-1)  # Loop indefinitely
 # coin_path = os.path.join(script_dir, "music/coin-get.mp3")
 # pygame.mixer.music.load(coin_path)
 
+# Function to load images
+import os
+import pygame
+import sys
+
+def load_image(filename):
+    # Get the absolute path of the script or executable
+    if getattr(sys, 'frozen', False):
+        # If running as a PyInstaller bundle
+        base_path = sys._MEIPASS
+    else:
+        # If running as a normal Python script
+        base_path = os.path.dirname(__file__)
+
+    # Construct the full path to the image
+    full_path = os.path.join(base_path, filename)
+
+    # print(f"Loading image from: {full_path}")
+
+    # Check if the file exists
+    if not os.path.exists(full_path):
+        raise FileNotFoundError(f"Image not found: {full_path}")
+
+    return pygame.image.load(full_path).convert_alpha()
 
 # Function to play coin sound
 def play_coin_sound():
@@ -70,21 +111,21 @@ class Player(pygame.sprite.Sprite):
         super().__init__()
 
         # Load running animation frames
-        self.run_frames = [pygame.image.load(f'running-game-animations/running/frame-{i}.png').convert_alpha() for i in range(1, 7)]
+        self.run_frames = [load_image(f'running-game-animations/running/frame-{i}.png') for i in range(1, 7)]
         self.run_frames = [pygame.transform.scale(frame, (width, height + 30)) for frame in self.run_frames]
 
         # Load idle animation frames
-        self.idle_frames = [pygame.image.load(f'running-game-animations/idle/frame-{i}.png').convert_alpha() for i in range(1, 3)]
+        self.idle_frames = [load_image(f'running-game-animations/idle/frame-{i}.png') for i in range(1, 3)]
         self.idle_frames = [pygame.transform.scale(frame, (width + 4, height + 30)) for frame in self.idle_frames]
 
         # Load jump animation frames
-        self.jump_up_frame = pygame.image.load("running-game-animations/jump/jump-up.png").convert_alpha()
-        self.jump_fall_frame = pygame.image.load("running-game-animations/jump/jump-fall.png").convert_alpha()
+        self.jump_up_frame = load_image("running-game-animations/jump/jump-up.png")
+        self.jump_fall_frame = load_image("running-game-animations/jump/jump-fall.png")
         self.jump_up_frame = pygame.transform.scale(self.jump_up_frame, (width + 6, height + 30))
         self.jump_fall_frame = pygame.transform.scale(self.jump_fall_frame, (width + 8, height + 30))
 
         # Load life icon
-        self.life_icon = pygame.image.load("running-game-animations/lives/lives.png").convert_alpha()
+        self.life_icon = load_image("running-game-animations/lives/lives.png")
         self.life_icon = pygame.transform.scale(self.life_icon, (30, 30))
 
         # Initial sprite setup
@@ -192,9 +233,9 @@ class Coin(pygame.sprite.Sprite):
     """The coin class."""
     def __init__(self, x, y, width, height, speed):
         super().__init__()
-        self.image = pygame.image.load('images/coins/coin.png').convert_alpha()
+        self.image = load_image('images/coins/coin.png')
         self.image = pygame.transform.scale(self.image, (width, height))
-        # self.sparkle_image = pygame.image.load('images/coins/coin-sparkle.png').convert_alpha()
+        # self.sparkle_image = load_image('images/coins/coin-sparkle.png').convert_alpha()
         # self.sparkle_image = pygame.transform.scale(self.sparkle_image, (width, height))
         self.rect = self.image.get_rect(topleft=(x, y))
         self.speed = speed
@@ -208,7 +249,7 @@ class SuperCoin(pygame.sprite.Sprite):
     """The coin class."""
     def __init__(self, x, y, width, height, speed):
         super().__init__()
-        self.image = pygame.image.load('images/coins/super-coin.png').convert_alpha()
+        self.image = load_image('images/coins/super-coin.png')
         self.image = pygame.transform.scale(self.image, (width, height))
         self.rect = self.image.get_rect(topleft=(x, y))
         self.speed = speed
@@ -222,7 +263,7 @@ class Sparkle(pygame.sprite.Sprite):
     """A short-lived sparkle effect after collecting a coin."""
     def __init__(self, x, y, width, height):
         super().__init__()
-        self.image = pygame.image.load('images/coins/coin-sparkle.png').convert_alpha()
+        self.image = load_image('images/coins/coin-sparkle.png')
         self.image = pygame.transform.scale(self.image, (width, height))
         self.rect = self.image.get_rect(center=(x, y))
         self.lifetime = 15  # Frames before disappearing
@@ -236,7 +277,7 @@ class Obstacle(pygame.sprite.Sprite):
     """The obstacle class."""
     def __init__(self, x, y, width, height, speed):
         super().__init__()
-        self.image = pygame.image.load('images/rock-obstacle.png').convert_alpha()
+        self.image = load_image('images/rock-obstacle.png')
         self.image = pygame.transform.scale(self.image, (width, height))
         self.rect = self.image.get_rect(topleft=(x, y))
         self.speed = speed
@@ -262,12 +303,12 @@ def update_score_in_db(player_name, score):
 
 def game_loop(player_name):
     """The main game loop."""
-    mountain_bg = pygame.image.load("images/backgrounds/whole-background.jpg").convert()
+    mountain_bg = load_image("images/backgrounds/whole-background.jpg")
     mountain_bg = pygame.transform.scale(mountain_bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
     bg_x1, bg_x2 = 0, SCREEN_WIDTH  # Positions for two background images to create a seamless loop
 
     # # Load platform image
-    # platform_image = pygame.image.load("images/platforms/green-stage.png").convert_alpha()
+    # platform_image = load_image("images/platforms/green-stage.png").convert_alpha()
     # platform_image = pygame.transform.scale(platform_image, (SCREEN_WIDTH, 200))  # Adjust height if needed
 
     # Initial positions for scrolling platforms
