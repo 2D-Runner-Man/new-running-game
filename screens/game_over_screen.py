@@ -3,23 +3,25 @@ import pygame
 import sys
 # from running_game import game_loop
 
-def game_over_screen(screen, font, large_font):
+def game_over_screen(screen, font, large_font, player_name):
     """Display a Game Over screen."""
 
     game_over_image = pygame.image.load("images/game-over-screen.png").convert_alpha()
 
     game_over_text = large_font.render("Press the [esc] key to exit", True, (255, 255, 255))
 
+    game_over_rect = game_over_image.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 30))
+
     restart_text = font.render("Restart", True, (255, 255, 255))
 
-    restart_rect = restart_text.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 110))
+    restart_rect = restart_text.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 150))
+
+    player_name_text = font.render("You got hit too many times " + player_name, True, (255, 255, 255))
+
+    player_name_rect = player_name_text.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 80))
 
     while True:
         screen.fill((32, 32, 32))  # Black background
-     
-        game_over_rect = game_over_image.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 30))
-        screen.blit(game_over_image, game_over_rect)
-        screen.blit(game_over_text, game_over_text.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 20)))
 
         # Detect mouse position
         mouse_pos = pygame.mouse.get_pos()
@@ -27,10 +29,14 @@ def game_over_screen(screen, font, large_font):
 
         # Change button color when hovered
         button_color = (255, 50, 50) if is_hovered else (200, 0, 0)
+    
+        screen.blit(game_over_image, game_over_rect)
+        screen.blit(game_over_text, game_over_text.get_rect(center=(screen.get_width() // 2 - 10, screen.get_height() // 2 + 10)))
+
+        screen.blit(player_name_text, player_name_rect)
 
         pygame.draw.rect(screen, button_color, restart_rect.inflate(30, 10), border_radius=10)  # Button background
         screen.blit(restart_text, restart_rect)  # Draw button text
-
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:  # Handle closing window

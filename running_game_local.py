@@ -401,7 +401,7 @@ def game_loop(player_name):
 
     pygame.mixer.music.stop() # Stops music
 
-    game_over_screen(screen, font, large_font)
+    game_over_screen(screen, font, large_font, player_name)
     
     # Restart game when user clicks restart
     pygame.mixer.music.load("music/running-game-music.mp3")  # Replace with your actual file name
