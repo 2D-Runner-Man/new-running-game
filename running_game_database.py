@@ -1,3 +1,4 @@
+##### This version connects to postgres #####
 import pygame
 import sys
 import random

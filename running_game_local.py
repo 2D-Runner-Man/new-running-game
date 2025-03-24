@@ -1,4 +1,3 @@
-### This version connects to postgres ###
 import pygame
 import sys
 import random
@@ -8,6 +7,7 @@ from screens.start_screen import start_screen
 from screens.controls_screen import controls_screen
 from screens.name_input_screen import name_input_screen
 from screens.game_over_screen import game_over_screen
+from screens.thanks_for_playing_screen import thanks_for_playing_screen 
 
 
 def set_working_directory():
@@ -270,13 +270,6 @@ def game_loop(player_name):
     mountain_bg = pygame.transform.scale(mountain_bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
     bg_x1, bg_x2 = 0, SCREEN_WIDTH  # Positions for two background images to create a seamless loop
 
-    # # Load platform image
-    # platform_image = load_image("images/platforms/green-stage.png").convert_alpha()
-    # platform_image = pygame.transform.scale(platform_image, (SCREEN_WIDTH, 200))  # Adjust height if needed
-
-    # Initial positions for scrolling platforms
-    platform_x1, platform_x2 = 0, SCREEN_WIDTH
-
     player = Player(50, GROUND_Y - 50, 50, 50, name=player_name)
     all_sprites = pygame.sprite.Group(player)
     obstacles = pygame.sprite.Group()
@@ -310,14 +303,6 @@ def game_loop(player_name):
             bg_x1 = SCREEN_WIDTH
         if bg_x2 <= -SCREEN_WIDTH:
             bg_x2 = SCREEN_WIDTH
-
-        # # Scroll the platform
-        # platform_x1 -= 2
-        # platform_x2 -= 2
-        # if platform_x1 <= -SCREEN_WIDTH:
-        #     platform_x1 = SCREEN_WIDTH
-        # if platform_x2 <= -SCREEN_WIDTH:
-        #     platform_x2 = SCREEN_WIDTH
 
         # Draw the background
         screen.blit(mountain_bg, (bg_x1, 0))
@@ -355,7 +340,7 @@ def game_loop(player_name):
         if pygame.sprite.spritecollide(player, obstacles, False):
             player.respawn()
             player.lives -= 1
-            respawn_timer = 180  # 2 second delay before spawning obstacles
+            respawn_timer = 180  # 3 second delay before spawning obstacles
 
         if pygame.sprite.spritecollide(player, coins, True):
             score += 100
@@ -370,13 +355,8 @@ def game_loop(player_name):
 
         if respawn_timer > 0:
             respawn_timer -= 1
-        
-        #  # Draw the scrolling platforms
-        # screen.blit(platform_image, (platform_x1, GROUND_Y - 75))
-        # screen.blit(platform_image, (platform_x2, GROUND_Y - 75))
 
         # Draws everything
-        # pygame.draw.line(screen, BLACK, (0, GROUND_Y), (SCREEN_WIDTH, GROUND_Y), 10)
         all_sprites.draw(screen)
         player.draw(screen)
         obstacles.draw(screen)
@@ -401,8 +381,10 @@ def game_loop(player_name):
 
     pygame.mixer.music.stop() # Stops music
 
+    thanks_for_playing_screen(screen) # Thanks for playing screen
+
     game_over_screen(screen, font, large_font, player_name)
-    
+  
     # Restart game when user clicks restart
     pygame.mixer.music.load("music/running-game-music.mp3")  # Replace with your actual file name
     pygame.mixer.music.set_volume(0.6)  # Adjust volume (0.0 to 1.0)

@@ -10,7 +10,7 @@ def game_over_screen(screen, font, large_font, player_name):
 
     game_over_text = large_font.render("Press the [esc] key to exit", True, (255, 255, 255))
 
-    game_over_rect = game_over_image.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 30))
+    game_over_rect = game_over_image.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 20))
 
     restart_text = font.render("Restart", True, (255, 255, 255))
 
@@ -42,7 +42,7 @@ def game_over_screen(screen, font, large_font, player_name):
             if event.type == pygame.QUIT:  # Handle closing window
                 pygame.quit()
                 sys.exit()
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE: # Uses only escape key to exit
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
