@@ -15,7 +15,7 @@ module.exports = {
       host:'127.0.0.1',
       port: 5432,
       user:'jahmari',
-      password: '1234',
+      password: '',
       database: 'running_game_database',
     },
     migrations: {
