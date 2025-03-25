@@ -16,9 +16,9 @@ def start_screen(screen, large_font):
         screen.fill((32, 32, 32))  # Clear the screen (optional)
         
         elapsed_time = pygame.time.get_ticks() - start_time  # Time since start
-        hover_offset = int(math.sin(elapsed_time * 0.003) * 10)  # Smooth hover effect
+        hover_offset = int(math.sin(elapsed_time * 0.005) * 10)  # Smooth hover effect
 
-        title_rect = title_image.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 30))
+        title_rect = title_image.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 20))
         screen.blit(title_image, title_rect)
 
         start_text_rect = start_text.get_rect(center=(screen.get_width() // 2 + 105, screen.get_height() // 2 + 110 + hover_offset))

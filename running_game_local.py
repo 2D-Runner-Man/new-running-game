@@ -83,6 +83,7 @@ GROUND_Y, clock = 425, pygame.time.Clock()
 # Fonts
 font = pygame.font.Font(None, 36)
 large_font = pygame.font.Font(None, 55)
+extra_large_font = pygame.font.Font(None, 70)
 
 class Player(pygame.sprite.Sprite):
     """The main player class with running, jumping, and idle animations."""
@@ -117,7 +118,9 @@ class Player(pygame.sprite.Sprite):
         self.jumping = False
         self.facing_right = True
         self.name = name
-        self.lives = 5
+        self.lives = 5 # Default Lives
+        self.lives = 1
+
 
         # Animation properties
         self.animation_speed = 5
@@ -381,8 +384,7 @@ def game_loop(player_name):
 
     pygame.mixer.music.stop() # Stops music
 
-    thanks_for_playing_screen(screen) # Thanks for playing screen
-
+    thanks_for_playing_screen(screen, large_font, extra_large_font, score) # Thanks for playing screen
     game_over_screen(screen, font, large_font, player_name)
   
     # Restart game when user clicks restart
