@@ -119,8 +119,6 @@ class Player(pygame.sprite.Sprite):
         self.facing_right = True
         self.name = name
         self.lives = 5 # Default Lives
-        self.lives = 1
-
 
         # Animation properties
         self.animation_speed = 5

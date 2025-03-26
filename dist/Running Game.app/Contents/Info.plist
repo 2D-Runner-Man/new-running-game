@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>running_game</string>
+	<string>running_game_local</string>
 	<key>CFBundleExecutable</key>
-	<string>running_game</string>
+	<string>running_game_local</string>
 	<key>CFBundleIconFile</key>
 	<string>generated-5fecbd6971a4a969604d65fe734c2433b9b3e3345c421769adc7e0229f3eb5d4.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>running_game</string>
+	<string>running_game_local</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>running_game</string>
+	<string>running_game_local</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

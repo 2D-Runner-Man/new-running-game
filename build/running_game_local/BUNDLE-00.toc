@@ -1,0 +1,3 @@
+([('running_game_local',
+   '/Users/owner/Downloads/Development/unit-8/new-running-game/dist/running_game_local',
+   'EXECUTABLE')],)
