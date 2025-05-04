@@ -28,19 +28,14 @@ You play as a customizable runner trying to stay alive and rack up the highest s
 
 ## 📸 Screenshots
 
-> _Place your screenshots in a `/screenshots` folder and reference them here._
-
 ### Title Screen
-![Start Screen](screenshots/start_screen.png)
+![Start Screen](images/title.png)
 
 ### Controls
-![Controls Screen](screenshots/controls_screen.png)
+![Controls Screen](images/controls_white.png)
 
 ### Running Action
-![Action Shot](screenshots/gameplay2.png)
-
-### Game Over
-![Game Over](screenshots/game_over.png)
+![Action Shot](images/action.png)
 
 ---
 
