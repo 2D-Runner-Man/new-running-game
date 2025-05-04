@@ -1,14 +1,6 @@
 # 🏃‍♂️ The Running Game
 
-**The Running Game** is a 2D side-scrolling action game built using Python and Pygame. Navigate treacherous terrain, collect coins, dodge obstacles, and avoid skull enemies — all while keeping your lives intact and your score soaring!
-
----
-
-## 🎮 Gameplay
-
-You play as a customizable runner trying to stay alive and rack up the highest score possible. Coins, super coins, and dangers await — can you survive?
-
-![Gameplay Screenshot](screenshots/gameplay1.png)
+**The Running Game** is a 2D side-scrolling action game built using Python and Pygame. Navigate treacherous terrain, collect coins, dodge obstacles, and avoid skull enemies all while keeping your lives intact and your score soaring!
 
 ---
 
@@ -32,7 +24,7 @@ You play as a customizable runner trying to stay alive and rack up the highest s
 ![Start Screen](images/title.png)
 
 ### Controls
-![Controls Screen](images/controls_white.png)
+![Controls Screen](images/controls-white.png)
 
 ### Running Action
 ![Action Shot](images/action.png)
