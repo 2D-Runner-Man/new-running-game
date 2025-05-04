@@ -46,7 +46,7 @@ You play as a customizable runner trying to stay alive and rack up the highest s
 
 ### 🧰 Installation
 
-## Download the ZIP:**
+# Download the ZIP:**
 ![Download](/Running Game.zip)
 
 2. **Extract the ZIP file** to your desired folder.
