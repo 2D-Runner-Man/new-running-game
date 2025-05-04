@@ -28,6 +28,9 @@ pygame.mixer.music.play(-1)
 coin_sound = pygame.mixer.Sound("music/coin-get.mp3")
 coin_sound.set_volume(0.3)
 
+skull_sound = pygame.mixer.Sound("music/skull-sound.wav")
+skull_sound.set_volume(0.3)
+
 def load_image(filename):
     if getattr(sys, 'frozen', False):
         base_path = sys._MEIPASS
@@ -41,6 +44,10 @@ def load_image(filename):
 def play_coin_sound():
     pygame.mixer.music.set_volume(0.5)
     coin_sound.play()
+
+def play_skull_sound():
+    pygame.mixer.music.set_volume(0.5)
+    skull_sound.play()
 
 SCREEN_WIDTH, SCREEN_HEIGHT = 900, 500
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -290,15 +297,19 @@ def game_loop(player_name):
                 obstacle_y = GROUND_Y - 75
                 coin_y = GROUND_Y - 175
                 super_coin_y = GROUND_Y - 275
+                
+                if False:  # Prevent obstacle from being added
+                    obstacles.add(Obstacle(obstacle_x, obstacle_y, 75, 75, speed=6))
 
-                obstacles.add(Obstacle(obstacle_x, obstacle_y, 75, 75, speed=6))
                 coins.add(Coin(obstacle_x, coin_y, 50, 50, speed=10))
                 super_coins.add(SuperCoin(obstacle_x, super_coin_y, 50, 50, speed=3))
 
                 # Add this line to spawn skull enemies every other spawn
                 if random.random() < 0.5:
                     skull_enemies.add(SkullEnemy(obstacle_x + 150, obstacle_y, 75, 75, speed=5))
+                    play_skull_sound()
 
+        # Collision Effects
         if pygame.sprite.spritecollide(player, obstacles, False):
             player.respawn()
             player.lives -= 1
@@ -326,7 +337,7 @@ def game_loop(player_name):
         # Draws everything
         all_sprites.draw(screen)
         player.draw(screen)
-        obstacles.draw(screen)
+        # obstacles.draw(screen)
         coins.draw(screen)
         super_coins.draw(screen)
         sparkles.draw(screen)
