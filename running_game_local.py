@@ -224,7 +224,7 @@ class Coin(pygame.sprite.Sprite):
             self.kill()
 
 class SuperCoin(pygame.sprite.Sprite):
-    """The coin class."""
+    """The Super coin class."""
     def __init__(self, x, y, width, height, speed):
         super().__init__()
         self.image = load_image('images/coins/super-coin.png')
