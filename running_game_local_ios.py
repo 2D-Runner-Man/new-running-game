@@ -278,11 +278,10 @@ def game_loop(player_name):
     super_coins = pygame.sprite.Group()
     sparkles = pygame.sprite.Group()
     controller, obstacle_timer, spawn_interval, score, respawn_timer = {"left": False, "right": False, "up": False}, 0, 90, 0, 0
-    paused = False
     last_score_time = pygame.time.get_ticks()  # Track the start time for score increment
 
     while player.lives > 0:
-        # screen.fill(WHITE)
+        screen.fill(WHITE)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -297,38 +296,33 @@ def game_loop(player_name):
                     controller["up"] = key_state
                 elif event.key == pygame.K_ESCAPE and key_state:
                     return
-                elif event.key == pygame.K_p and key_state:
-                     paused = not paused
-
-            
-        if not paused:
-            # Scroll the background
-            bg_x1 -= 2  # Adjust the speed of the scrolling
-            bg_x2 -= 2
-            if bg_x1 <= -SCREEN_WIDTH:
-                bg_x1 = SCREEN_WIDTH
-            if bg_x2 <= -SCREEN_WIDTH:
-                bg_x2 = SCREEN_WIDTH
-
-
-            # Update Sprites
-            all_sprites.update(controller)
-            obstacles.update()
-            coins.update()
-            super_coins.update()
-            sparkles.update()
-
-            # Increment score every second
-            current_time = pygame.time.get_ticks()
-            if current_time - last_score_time >= 1000:  # Every 1000 ms (1 second)
-                score += 100
-                last_score_time = current_time
                 
-        # ALWAYS draw the background
+        # Scroll the background
+        bg_x1 -= 2  # Adjust the speed of the scrolling
+        bg_x2 -= 2
+        if bg_x1 <= -SCREEN_WIDTH:
+            bg_x1 = SCREEN_WIDTH
+        if bg_x2 <= -SCREEN_WIDTH:
+            bg_x2 = SCREEN_WIDTH
+
+        # Draw the background
         screen.blit(mountain_bg, (bg_x1, 0))
         screen.blit(mountain_bg, (bg_x2, 0))
 
-        if not paused and respawn_timer == 0:
+        # Update Sprites
+        all_sprites.update(controller)
+        obstacles.update()
+        coins.update()
+        super_coins.update()
+        sparkles.update()
+
+        # Increment score every second
+        current_time = pygame.time.get_ticks()
+        if current_time - last_score_time >= 1000:  # Every 1000 ms (1 second)
+            score += 100
+            last_score_time = current_time
+
+        if respawn_timer == 0:
             obstacle_timer += 1
             # Adjust spawn speed after reaching a score of 15,000
             if score >= 15000:
@@ -381,29 +375,7 @@ def game_loop(player_name):
         for _ in range(player.lives):
             screen.blit(player.life_icon, (start_x, 7))
             start_x += 30  # Space out the icons
-
         screen.blit(font.render(f"Score: {score}", True, BLACK), (10, 40))
-
-        if paused:
-            pause_text = extra_large_font.render("PAUSED", True, WHITE)
-            pause_rect = pause_text.get_rect(
-                center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-            )
-
-            # Dark transparent overlay
-            overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-            overlay.set_alpha(150)
-            overlay.fill(BLACK)
-            screen.blit(overlay, (0, 0))
-
-            screen.blit(pause_text, pause_rect)
-
-            resume_text = font.render("Press P to Resume", True, WHITE)
-            resume_rect = resume_text.get_rect(
-                center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 60)
-            )
-
-            screen.blit(resume_text, resume_rect)
         pygame.display.flip()
 
         clock.tick(60) # Cap the frame rate
