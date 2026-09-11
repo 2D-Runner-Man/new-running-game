@@ -26,7 +26,6 @@ set_working_directory()
 # Initialize pygame
 pygame.init()
 
-
 os.chdir(os.path.dirname(__file__))
 
 # Initialize Pygame mixer for sound
@@ -42,9 +41,9 @@ coin_sound = pygame.mixer.Sound("music/coin-get.mp3")
 coin_sound.set_volume(0.3)  # Lower the volume of the coin sound
 
 # Function to load images
-import os
-import pygame
-import sys
+# import os
+# import pygame
+# import sys
 
 def load_image(filename):
     # Get the absolute path of the script or executable
@@ -279,14 +278,19 @@ def game_loop(player_name):
     sparkles = pygame.sprite.Group()
     controller, obstacle_timer, spawn_interval, score, respawn_timer = {"left": False, "right": False, "up": False}, 0, 90, 0, 0
     paused = False
+    pause_button = pygame.Rect(840, 5, 55, 35)
     last_score_time = pygame.time.get_ticks()  # Track the start time for score increment
 
     while player.lives > 0:
-        # screen.fill(WHITE)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+    
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if pause_button.collidepoint(event.pos):
+                    paused = not paused
+
             if event.type in (pygame.KEYDOWN, pygame.KEYUP):
                 key_state = event.type == pygame.KEYDOWN
                 if event.key == pygame.K_LEFT:
@@ -323,7 +327,7 @@ def game_loop(player_name):
             if current_time - last_score_time >= 1000:  # Every 1000 ms (1 second)
                 score += 100
                 last_score_time = current_time
-                
+
         # ALWAYS draw the background
         screen.blit(mountain_bg, (bg_x1, 0))
         screen.blit(mountain_bg, (bg_x2, 0))
@@ -382,7 +386,16 @@ def game_loop(player_name):
             screen.blit(player.life_icon, (start_x, 7))
             start_x += 30  # Space out the icons
 
+        # Displays Score on Screen
         screen.blit(font.render(f"Score: {score}", True, BLACK), (10, 40))
+
+        # Draw pause button
+        pygame.draw.rect(screen, BLACK, pause_button, border_radius=8)
+
+        pause_text = font.render("II", True, WHITE)
+        pause_text_rect = pause_text.get_rect(center=pause_button.center)
+
+        screen.blit(pause_text, pause_text_rect)
 
         if paused:
             pause_text = extra_large_font.render("PAUSED", True, WHITE)
