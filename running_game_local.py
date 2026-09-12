@@ -100,8 +100,8 @@ class Player(pygame.sprite.Sprite):
         # Load jump animation frames
         self.jump_up_frame = load_image("running-game-animations/player/jump/jump-up.png")
         self.jump_fall_frame = load_image("running-game-animations/player/jump/jump-fall.png")
-        self.jump_up_frame = pygame.transform.scale(self.jump_up_frame, (width + 6, height + 30))
-        self.jump_fall_frame = pygame.transform.scale(self.jump_fall_frame, (width + 8, height + 30))
+        self.jump_up_frame = pygame.transform.scale(self.jump_up_frame, (width + 8, height + 35))
+        self.jump_fall_frame = pygame.transform.scale(self.jump_fall_frame, (width + 10, height + 30))
 
         # Load life icon
         self.life_icon = load_image("running-game-animations/player/lives/lives.png")
@@ -299,10 +299,10 @@ def game_loop(player_name):
                     controller["right"] = key_state
                 elif event.key == pygame.K_UP:
                     controller["up"] = key_state
+                elif event.key == pygame.K_SPACE and key_state:
+                    paused = not paused
                 elif event.key == pygame.K_ESCAPE and key_state:
                     return
-                elif event.key == pygame.K_p and key_state:
-                     paused = not paused
 
             
         if not paused:
@@ -343,10 +343,15 @@ def game_loop(player_name):
                 obstacle_x = SCREEN_WIDTH + random.randint(0, 300)
                 obstacle_y = GROUND_Y - 75
                 coin_y = GROUND_Y - 175
+                super_coin_x = SCREEN_WIDTH + random.randint(200, 500)
                 super_coin_y = GROUND_Y - 275 # Above regular coin
                 obstacles.add(Obstacle(obstacle_x, obstacle_y, 75, 75, speed=6)) # Spawns Obstacles
                 coins.add(Coin(obstacle_x, coin_y, 50, 50, speed=10)) # Spawns Coins
-                super_coins.add(SuperCoin(obstacle_x, super_coin_y, 50, 50, speed=3)) # Spawns Super Coins
+
+                while any(abs(super_coin_x - coin.rect.x) < 75 for coin in super_coins):
+                    super_coin_x = SCREEN_WIDTH + random.randint(0, 500)
+
+                super_coins.add(SuperCoin(super_coin_x, super_coin_y, 50, 50, speed=3)) # Spawns Super Coins
 
         if pygame.sprite.spritecollide(player, obstacles, False):
             player.respawn()
@@ -376,7 +381,7 @@ def game_loop(player_name):
         sparkles.draw(screen)
         
         # Display Lives in the Top Left Corner
-        lives_text = font.render("Lives:", True, WHITE)
+        lives_text = font.render("Lives:  ", True, WHITE)
         pygame.draw.rect(screen, BLACK, (5, 5, 230, 35), border_radius=5) # Background for lives
         screen.blit(lives_text, (10, 10))  # Position "Lives:" text 
 
@@ -411,7 +416,7 @@ def game_loop(player_name):
 
             screen.blit(pause_text, pause_rect)
 
-            resume_text = font.render("Press P to Resume", True, WHITE)
+            resume_text = font.render("Press SPACE to Resume", True, WHITE)
             resume_rect = resume_text.get_rect(
                 center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 60)
             )

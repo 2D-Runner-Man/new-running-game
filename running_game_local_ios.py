@@ -26,7 +26,6 @@ set_working_directory()
 # Initialize pygame
 pygame.init()
 
-
 os.chdir(os.path.dirname(__file__))
 
 # Initialize Pygame mixer for sound
@@ -40,11 +39,6 @@ pygame.mixer.music.play(-1)  # Loop indefinitely
 # Load coin sound effect
 coin_sound = pygame.mixer.Sound("music/coin-get.mp3")
 coin_sound.set_volume(0.3)  # Lower the volume of the coin sound
-
-# Function to load images
-import os
-import pygame
-import sys
 
 def load_image(filename):
     # Get the absolute path of the script or executable

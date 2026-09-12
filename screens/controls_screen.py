@@ -4,7 +4,7 @@ import sys
 
 def controls_screen(screen):
     """Show the controls screen"""
-    controls_image = pygame.image.load("images/controls-white.png").convert_alpha() # For White Background
+    controls_image = pygame.image.load("images/controls-white-pause.png").convert_alpha() # For White Background
 
     while True:
         title_rect = controls_image.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 20))
