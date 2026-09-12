@@ -118,6 +118,9 @@ class Player(pygame.sprite.Sprite):
         self.facing_right = True
         self.name = name
         self.lives = 5 # Default Lives
+        self.invulnerable = False
+        self.invulnerable_timer = 0
+        self.flash_timer = 0
 
         # Animation properties
         self.animation_speed = 5
@@ -126,7 +129,18 @@ class Player(pygame.sprite.Sprite):
 
     def update(self, controller):
         """Update player movement and animations while keeping it within screen bounds."""
-        self.is_moving = False  # Reset movement state
+        self.is_moving = False
+        
+        # Handle invulnerability after being hit
+        if self.invulnerable:
+            self.invulnerable_timer -= 1
+            self.flash_timer += 1
+
+        # Stop invulnerability after 3 seconds
+        if self.invulnerable_timer <= 0:
+            self.invulnerable = False
+            self.is_moving = False  # Reset movement state
+            self.flash_timer = 0
 
         if controller["up"] and not self.jumping:
             self.y_velocity = -18
@@ -201,12 +215,31 @@ class Player(pygame.sprite.Sprite):
         self.rect.x, self.rect.y = 50, -50
         self.x_velocity, self.y_velocity = 0, 0
         self.jumping = True
+        self.is_moving = False
+        self.current_frame = 0
+        self.animation_counter = 0
 
     def draw(self, screen):
         """Draw the player and their name."""
+            # Flash the player while invulnerable
+        if self.invulnerable:
+                # Blink between normal and transparent
+                if self.flash_timer % 10 < 5:
+                    self.image.set_alpha(255)
+                else:
+                    self.image.set_alpha(80)
+        else:
+            self.image.set_alpha(255)
+
         screen.blit(self.image, self.rect.topleft)
+
         name_surface = font.render(self.name, True, BLACK)
-        screen.blit(name_surface, name_surface.get_rect(center=(self.rect.centerx, self.rect.top - 10)))
+        screen.blit(
+            name_surface,
+            name_surface.get_rect(
+                    center=(self.rect.centerx, self.rect.top - 10)
+            )
+        )
 
 class Coin(pygame.sprite.Sprite):
     """The coin class."""
@@ -353,10 +386,17 @@ def game_loop(player_name):
 
                 super_coins.add(SuperCoin(super_coin_x, super_coin_y, 50, 50, speed=3)) # Spawns Super Coins
 
-        if pygame.sprite.spritecollide(player, obstacles, False):
-            player.respawn()
-            player.lives -= 1
-            respawn_timer = 180  # 3 second delay before spawning obstacles
+        if not player.invulnerable:
+            if pygame.sprite.spritecollide(player, obstacles, False):
+                player.respawn()
+                player.lives -= 1
+
+                # Start invincibility frames
+                player.invulnerable = True
+                player.invulnerable_timer = 180
+                player.flash_timer = 0
+
+                respawn_timer = 180
 
         if pygame.sprite.spritecollide(player, coins, True):
             score += 100
@@ -382,11 +422,11 @@ def game_loop(player_name):
         
         # Display Lives in the Top Left Corner
         lives_text = font.render("Lives:  ", True, WHITE)
-        pygame.draw.rect(screen, BLACK, (5, 5, 230, 35), border_radius=5) # Background for lives
+        pygame.draw.rect(screen, BLACK, (5, 5, 235, 35), border_radius=5) # Background for lives
         screen.blit(lives_text, (10, 10))  # Position "Lives:" text 
 
         # Draw life icons next to the text
-        start_x = 80  # Adjust spacing
+        start_x = 85  # Adjust spacing
         for _ in range(player.lives):
             screen.blit(player.life_icon, (start_x, 7))
             start_x += 30  # Space out the icons
