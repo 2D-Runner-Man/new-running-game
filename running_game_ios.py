@@ -5,7 +5,7 @@ import random
 import os
 # Importing from folders
 from screens.start_screen import start_screen
-from screens.controls_screen import controls_screen
+from screens.controls_screen_ios import controls_screen
 from screens.name_input_screen import name_input_screen
 from screens.game_over_screen_ios import game_over_screen
 from screens.thanks_for_playing_screen import thanks_for_playing_screen 
@@ -72,12 +72,38 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("2D Running Game")
 
 # Touchscreen controls
-left_button = pygame.Rect(30, SCREEN_HEIGHT - 85, 90, 65)
-right_button = pygame.Rect(135, SCREEN_HEIGHT - 85, 90, 65)
-jump_button = pygame.Rect(SCREEN_WIDTH - 150, SCREEN_HEIGHT - 85, 120, 65)
+# Smaller touchscreen controls, positioned lower
+left_button = pygame.Rect(20, SCREEN_HEIGHT - 60, 65, 45)
+right_button = pygame.Rect(95, SCREEN_HEIGHT - 60, 65, 45)
+jump_button = pygame.Rect(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 60, 80, 45)
 
 # Pause button in the top-right corner
 pause_button = pygame.Rect(SCREEN_WIDTH - 65, 10, 55, 45)
+# Touchscreen controls
+button_width = 65
+button_height = 45
+button_y = SCREEN_HEIGHT - 50
+
+# LEFT button — far left
+left_button = pygame.Rect(
+    20, button_y, button_width, button_height
+)
+
+# JUMP button — center
+jump_button = pygame.Rect(
+    (SCREEN_WIDTH - 80) // 2,
+    button_y,
+    80,
+    button_height
+)
+
+# RIGHT button — far right
+right_button = pygame.Rect(
+    SCREEN_WIDTH - button_width - 20,
+    button_y,
+    button_width,
+    button_height
+)
 
 touch_buttons = {
     "left": left_button,
@@ -103,7 +129,7 @@ def draw_touch_controls():
         )
 
         label = "JUMP" if action == "up" else action.upper()
-        text = font.render(label, True, WHITE)
+        text = touch_font.render(label, True, WHITE)
 
         screen.blit(
             text,
@@ -118,6 +144,9 @@ GROUND_Y, clock = 425, pygame.time.Clock()
 font = pygame.font.Font(None, 36)
 large_font = pygame.font.Font(None, 55)
 extra_large_font = pygame.font.Font(None, 70)
+
+# Smaller font for touchscreen buttons
+touch_font = pygame.font.Font(None, 22)
 
 class Player(pygame.sprite.Sprite):
     """The main player class with running, jumping, and idle animations."""
@@ -135,8 +164,8 @@ class Player(pygame.sprite.Sprite):
         # Load jump animation frames
         self.jump_up_frame = load_image("running-game-animations/player/jump/jump-up.png")
         self.jump_fall_frame = load_image("running-game-animations/player/jump/jump-fall.png")
-        self.jump_up_frame = pygame.transform.scale(self.jump_up_frame, (width + 6, height + 30))
-        self.jump_fall_frame = pygame.transform.scale(self.jump_fall_frame, (width + 8, height + 30))
+        self.jump_up_frame = pygame.transform.scale(self.jump_up_frame, (width + 8, height + 35))
+        self.jump_fall_frame = pygame.transform.scale(self.jump_fall_frame, (width + 10, height + 30))
 
         # Load life icon
         self.life_icon = load_image("running-game-animations/player/lives/lives.png")
