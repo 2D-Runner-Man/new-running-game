@@ -1,3 +1,5 @@
+# Original game where I can include new features for
+# updated version of game and ios version as well
 import pygame
 import sys
 import random
@@ -8,7 +10,6 @@ from screens.controls_screen import controls_screen
 from screens.name_input_screen import name_input_screen
 from screens.game_over_screen import game_over_screen
 from screens.thanks_for_playing_screen import thanks_for_playing_screen 
-
 
 def set_working_directory():
     # Get the directory of the running script

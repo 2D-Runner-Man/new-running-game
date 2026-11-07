@@ -1,3 +1,5 @@
+# This version features new main character and new enemies
+# It is missing the pause feature and invincibility frames
 import pygame
 import sys
 import random

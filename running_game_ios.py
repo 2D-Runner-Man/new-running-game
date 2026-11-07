@@ -1,3 +1,4 @@
+# The iOS version of the game
 import pygame
 import sys
 import random
@@ -6,7 +7,7 @@ import os
 from screens.start_screen import start_screen
 from screens.controls_screen import controls_screen
 from screens.name_input_screen import name_input_screen
-from screens.game_over_screen import game_over_screen
+from screens.game_over_screen_ios import game_over_screen
 from screens.thanks_for_playing_screen import thanks_for_playing_screen 
 
 
@@ -70,6 +71,45 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 900, 500
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("2D Running Game")
 
+# Touchscreen controls
+left_button = pygame.Rect(30, SCREEN_HEIGHT - 85, 90, 65)
+right_button = pygame.Rect(135, SCREEN_HEIGHT - 85, 90, 65)
+jump_button = pygame.Rect(SCREEN_WIDTH - 150, SCREEN_HEIGHT - 85, 120, 65)
+
+# Pause button in the top-right corner
+pause_button = pygame.Rect(SCREEN_WIDTH - 65, 10, 55, 45)
+
+touch_buttons = {
+    "left": left_button,
+    "right": right_button,
+    "up": jump_button
+}
+
+def draw_touch_controls():
+    for action, rect in touch_buttons.items():
+        pygame.draw.rect(
+            screen,
+            (30, 30, 30),
+            rect,
+            border_radius=12
+        )
+
+        pygame.draw.rect(
+            screen,
+            WHITE,
+            rect,
+            2,
+            border_radius=12
+        )
+
+        label = "JUMP" if action == "up" else action.upper()
+        text = font.render(label, True, WHITE)
+
+        screen.blit(
+            text,
+            text.get_rect(center=rect.center)
+        )
+
 # Colors and constants
 WHITE, BLACK, RED, GREEN = (255, 255, 255), (32, 32, 32), (255, 0, 0), (0, 255, 0)
 GROUND_Y, clock = 425, pygame.time.Clock()
@@ -113,15 +153,40 @@ class Player(pygame.sprite.Sprite):
         self.facing_right = True
         self.name = name
         self.lives = 5 # Default Lives
+        
+        # Invulnerability properties
+        self.invulnerable = False
+        self.invulnerable_timer = 0
+        self.flash_timer = 0
 
         # Animation properties
         self.animation_speed = 5
         self.animation_counter = 0
         self.is_moving = False  # Track movement state
 
+        # Update invulnerability frames
+        if self.invulnerable:
+            self.invulnerable_timer -= 1
+            self.flash_timer += 1
+
+            if self.invulnerable_timer <= 0:
+                self.invulnerable = False
+                self.invulnerable_timer = 0
+                self.flash_timer = 0
+
     def update(self, controller):
         """Update player movement and animations while keeping it within screen bounds."""
-        self.is_moving = False  # Reset movement state
+        self.is_moving = False # Reset movement state
+
+        # Invulnerability countdown
+        if self.invulnerable:
+            self.invulnerable_timer -= 1
+            self.flash_timer += 1
+
+            if self.invulnerable_timer <= 0:
+                self.invulnerable = False
+                self.invulnerable_timer = 0
+                self.flash_timer = 0 
 
         if controller["up"] and not self.jumping:
             self.y_velocity = -18
@@ -197,11 +262,36 @@ class Player(pygame.sprite.Sprite):
         self.x_velocity, self.y_velocity = 0, 0
         self.jumping = True
 
+    
+    
     def draw(self, screen):
-        """Draw the player and their name."""
-        screen.blit(self.image, self.rect.topleft)
-        name_surface = font.render(self.name, True, BLACK)
-        screen.blit(name_surface, name_surface.get_rect(center=(self.rect.centerx, self.rect.top - 10)))
+        """Draw player with flashing invulnerability effect."""
+
+        # Hide player every other 5 frames
+        show_player = (
+            not self.invulnerable
+            or self.flash_timer % 10 < 5
+        )
+
+        if show_player:
+            screen.blit(self.image, self.rect.topleft)
+
+        # Always draw player name
+        name_surface = font.render(
+            self.name,
+            True,
+            BLACK
+        )
+
+        screen.blit(
+            name_surface,
+            name_surface.get_rect(
+                center=(
+                    self.rect.centerx,
+                    self.rect.top - 10
+                )
+            )
+        )
 
 class Coin(pygame.sprite.Sprite):
     """The coin class."""
@@ -274,47 +364,125 @@ def game_loop(player_name):
     controller, obstacle_timer, spawn_interval, score, respawn_timer = {"left": False, "right": False, "up": False}, 0, 90, 0, 0
     last_score_time = pygame.time.get_ticks()  # Track the start time for score increment
 
+    # Track keyboard and touch input separately
+    keyboard_controller = {
+        "left": False,
+        "right": False,
+        "up": False
+    }
+
+    active_touches = {}
+    mouse_action = None
+    paused = False
+
+    def get_touch_action(position):
+        for action, rect in touch_buttons.items():
+            if rect.collidepoint(position):
+                return action
+        return None
+
+    
     while player.lives > 0:
         screen.fill(WHITE)
+
         for event in pygame.event.get():
+
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            if event.type in (pygame.KEYDOWN, pygame.KEYUP):
-                key_state = event.type == pygame.KEYDOWN
-                if event.key == pygame.K_LEFT:
-                    controller["left"] = key_state
-                elif event.key == pygame.K_RIGHT:
-                    controller["right"] = key_state
-                elif event.key == pygame.K_UP:
-                    controller["up"] = key_state
-                elif event.key == pygame.K_ESCAPE and key_state:
-                    return
-                
-        # Scroll the background
-        bg_x1 -= 2  # Adjust the speed of the scrolling
-        bg_x2 -= 2
-        if bg_x1 <= -SCREEN_WIDTH:
-            bg_x1 = SCREEN_WIDTH
-        if bg_x2 <= -SCREEN_WIDTH:
-            bg_x2 = SCREEN_WIDTH
 
-        # Draw the background
+            # Keyboard controls
+            elif event.type in (pygame.KEYDOWN, pygame.KEYUP):
+                pressed = event.type == pygame.KEYDOWN
+
+                if event.key == pygame.K_LEFT:
+                    keyboard_controller["left"] = pressed
+
+                elif event.key == pygame.K_RIGHT:
+                    keyboard_controller["right"] = pressed
+
+                elif event.key == pygame.K_UP:
+                    keyboard_controller["up"] = pressed
+
+                elif event.key == pygame.K_SPACE and pressed:
+                    paused = not paused
+                    
+                elif event.key == pygame.K_ESCAPE and pressed:
+                    return
+
+            # Mouse controls for Mac
+            elif event.type == pygame.MOUSEBUTTONDOWN: 
+                if event.button == 1 and not getattr(event, "touch", False):
+
+                    if pause_button.collidepoint(event.pos):
+                        paused = not paused
+                        mouse_action = None
+                    elif not paused:
+                        mouse_action = get_touch_action(event.pos)
+
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1 and not getattr(event, "touch", False):
+                    mouse_action = None
+
+            # Touchscreen controls
+            elif event.type == pygame.FINGERDOWN:
+                position = (
+                    int(event.x * SCREEN_WIDTH),
+                    int(event.y * SCREEN_HEIGHT)
+                )
+
+                if pause_button.collidepoint(position):
+                    paused = not paused
+                    active_touches.clear()
+                elif not paused:
+                    active_touches[event.finger_id] = get_touch_action(position)
+
+            elif event.type == pygame.FINGERMOTION:
+                position = (
+                    int(event.x * SCREEN_WIDTH),
+                    int(event.y * SCREEN_HEIGHT)
+                )
+
+                active_touches[event.finger_id] = get_touch_action(position)
+
+            elif event.type == pygame.FINGERUP:
+                active_touches.pop(event.finger_id, None)
+
+        # Combine all controller inputs
+        for action in controller:
+            controller[action] = (
+                keyboard_controller[action]
+                or mouse_action == action
+                or action in active_touches.values()
+            )
+
+        # Continue with background scrolling below
+
+        if not paused:
+            # Scroll the background
+            bg_x1 -= 2  # Adjust the speed of the scrolling
+            bg_x2 -= 2
+            if bg_x1 <= -SCREEN_WIDTH:
+                bg_x1 = SCREEN_WIDTH
+            if bg_x2 <= -SCREEN_WIDTH:
+                bg_x2 = SCREEN_WIDTH
+
+            # Update Sprites
+            all_sprites.update(controller)
+            obstacles.update()
+            coins.update()
+            super_coins.update()
+            sparkles.update()
+
+        # ALWAYS draw the background
         screen.blit(mountain_bg, (bg_x1, 0))
         screen.blit(mountain_bg, (bg_x2, 0))
-
-        # Update Sprites
-        all_sprites.update(controller)
-        obstacles.update()
-        coins.update()
-        super_coins.update()
-        sparkles.update()
 
         # Increment score every second
         current_time = pygame.time.get_ticks()
         if current_time - last_score_time >= 1000:  # Every 1000 ms (1 second)
-            score += 100
-            last_score_time = current_time
+                score += 100
+                last_score_time = current_time
 
         if respawn_timer == 0:
             obstacle_timer += 1
@@ -332,27 +500,36 @@ def game_loop(player_name):
                 coins.add(Coin(obstacle_x, coin_y, 50, 50, speed=10)) # Spawns Coins
                 super_coins.add(SuperCoin(obstacle_x, super_coin_y, 50, 50, speed=3)) # Spawns Super Coins
 
-        if pygame.sprite.spritecollide(player, obstacles, False):
-            player.respawn()
-            player.lives -= 1
-            respawn_timer = 180  # 3 second delay before spawning obstacles
+        # Check obstacle collisions only when vulnerable
+        if not paused and not player.invulnerable:
+            if pygame.sprite.spritecollide(player, obstacles, False):
 
-        if pygame.sprite.spritecollide(player, coins, True):
-            score += 100
-            sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 60, 60))
-            play_coin_sound()
-            
-        if pygame.sprite.spritecollide(player, super_coins, True):
-            score += 500
-            # Bigger sparkle
-            sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 70, 70))
-            play_coin_sound()
+                player.lives -= 1
+                player.respawn()
 
-        if respawn_timer > 0:
-            respawn_timer -= 1
+                # Activate invulnerability for 180 frames
+                player.invulnerable = True
+                player.invulnerable_timer = 180
+                player.flash_timer = 0
+
+                # Delay obstacle spawning
+                respawn_timer = 180
+
+            if pygame.sprite.spritecollide(player, coins, True):
+                score += 100
+                sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 60, 60))
+                play_coin_sound()
+                
+            if pygame.sprite.spritecollide(player, super_coins, True):
+                score += 500
+                # Bigger sparkle
+                sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 70, 70))
+                play_coin_sound()
+
+            if respawn_timer > 0:
+                respawn_timer -= 1
 
         # Draws everything
-        all_sprites.draw(screen)
         player.draw(screen)
         obstacles.draw(screen)
         coins.draw(screen)
@@ -370,6 +547,71 @@ def game_loop(player_name):
             screen.blit(player.life_icon, (start_x, 7))
             start_x += 30  # Space out the icons
         screen.blit(font.render(f"Score: {score}", True, BLACK), (10, 40))
+
+        def draw_pause_button(paused):
+            # Button background
+            pygame.draw.rect(
+                screen,
+                BLACK,
+                pause_button,
+                border_radius=8
+            )
+
+            # Show pause or play symbol
+            symbol = ">" if paused else "II"
+
+            text = font.render(symbol, True, WHITE)
+            text_rect = text.get_rect(center=pause_button.center)
+
+            screen.blit(text, text_rect)
+
+
+        def draw_pause_overlay():
+            # Transparent dark overlay
+            overlay = pygame.Surface(
+                (SCREEN_WIDTH, SCREEN_HEIGHT),
+                pygame.SRCALPHA
+            )
+
+            overlay.fill((0, 0, 0, 160))
+            screen.blit(overlay, (0, 0))
+
+            # Paused title
+            paused_text = extra_large_font.render(
+                "PAUSED",
+                True,
+                WHITE
+            )
+
+            paused_rect = paused_text.get_rect(
+                center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+            )
+
+            screen.blit(paused_text, paused_rect)
+
+            # Resume instructions
+            resume_text = font.render(
+                "Tap Pause or Press SPACE to Resume",
+                True,
+                WHITE
+            )
+
+            resume_rect = resume_text.get_rect(
+                center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 60)
+            )
+
+            screen.blit(resume_text, resume_rect)
+
+        # Draw mobile controls
+        draw_touch_controls()
+
+        # Draw dark overlay when paused
+        if paused:
+            draw_pause_overlay()
+
+        # Draw pause button last so it remains clickable and visible
+        draw_pause_button(paused)
+     
         pygame.display.flip()
 
         clock.tick(60) # Cap the frame rate
@@ -377,7 +619,7 @@ def game_loop(player_name):
     pygame.mixer.music.stop() # Stops music
 
     thanks_for_playing_screen(screen, large_font, extra_large_font, score) # Thanks for playing screen
-    game_over_screen(screen, font, large_font, player_name)
+    game_over_screen(screen, font, player_name)
   
     # Restart game when user clicks restart
     pygame.mixer.music.load("music/running-game-music.mp3")  # Replace with your actual file name
