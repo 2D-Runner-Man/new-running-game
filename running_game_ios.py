@@ -1,4 +1,5 @@
 # The iOS version of the game
+# Currently working on XCode
 import pygame
 import sys
 import random
