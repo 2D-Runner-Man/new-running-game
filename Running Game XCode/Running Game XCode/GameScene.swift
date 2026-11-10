@@ -3,50 +3,7 @@ import SpriteKit
 import UIKit
 
 class GameScene: SKScene {
-
-    // MARK: - Player
-    var player = SKSpriteNode()
-
-    let playerSpeed: CGFloat = 250
-    let groundHeight: CGFloat = 70
     
-    // MARK: - Scoring
-    var score = 0
-    var scoreTimer: TimeInterval = 0
-
-    let scoreLabel = SKLabelNode(fontNamed: "Arial-BoldMT")
-
-    // MARK: - Jumping
-    var verticalVelocity: CGFloat = 0
-    var isJumping = false
-
-    let gravity: CGFloat = -1200
-    let jumpVelocity: CGFloat = 750
-    
-    // MARK: - Coins
-    var coins: [SKSpriteNode] = []
-
-    var coinSpawnTimer: TimeInterval = 0
-    let coinSpawnInterval: TimeInterval = 2.0
-
-    let coinSpeed: CGFloat = 180
-    let coinSize = CGSize(width: 30, height: 30)
-
-    // MARK: - Movement
-    var movingLeft = false
-    var movingRight = false
-
-    // MARK: - Touch Controls
-    var leftButton = SKShapeNode()
-    var jumpButton = SKShapeNode()
-    var rightButton = SKShapeNode()
-
-    // Track multiple fingers independently
-    var activeTouches: [UITouch: String] = [:]
-
-    // MARK: - Frame Timing
-    var lastUpdateTime: TimeInterval = 0
-  
     // MARK: - Scrolling Background
     var background1 = SKSpriteNode()
     var background2 = SKSpriteNode()
@@ -64,6 +21,62 @@ class GameScene: SKScene {
 
     var currentAnimation = ""
     var facingRight = true
+
+    // MARK: - Player
+    var player = SKSpriteNode()
+
+    let playerSpeed: CGFloat = 250
+    let groundHeight: CGFloat = 70
+    
+    // MARK: - Movement
+    var movingLeft = false
+    var movingRight = false
+    
+    // MARK: - Jumping
+    var verticalVelocity: CGFloat = 0
+    var isJumping = false
+
+    let gravity: CGFloat = -1200
+    let jumpVelocity: CGFloat = 750
+    
+    // MARK: - Touch Controls
+    var leftButton = SKShapeNode()
+    var jumpButton = SKShapeNode()
+    var rightButton = SKShapeNode()
+
+    // Track multiple fingers independently
+    var activeTouches: [UITouch: String] = [:]
+
+    // MARK: - Coins
+    var coins: [SKSpriteNode] = []
+
+    var coinSpawnTimer: TimeInterval = 0
+    let coinSpawnInterval: TimeInterval = 2.0
+
+    let coinSpeed: CGFloat = 180
+    let coinSize = CGSize(width: 30, height: 30)
+    
+    // MARK: - Super Coins
+    var superCoins: [SKSpriteNode] = []
+
+    var superCoinSpawnTimer: TimeInterval = 0
+    let superCoinSpawnInterval: TimeInterval = 6.0
+
+    let superCoinSpeed: CGFloat = 180
+    let superCoinSize = CGSize(width: 40, height: 40)
+    
+    // MARK: - Shared Coin Spawn Area
+    let coinMinimumY: CGFloat = 180
+    let coinMaximumY: CGFloat = 400
+    
+    // MARK: - Scoring
+    var score = 0
+    var scoreTimer: TimeInterval = 0
+
+    let scoreLabel = SKLabelNode(fontNamed: "Arial-BoldMT")
+
+    // MARK: - Frame Timing
+    var lastUpdateTime: TimeInterval = 0
     
     
     func setupScoreLabel() {
@@ -97,7 +110,6 @@ class GameScene: SKScene {
             SKTexture(imageNamed: "run\($0)")
         }
     }
-    
     
     func playAnimation(_ animation: String) {
         guard currentAnimation != animation else { return }
@@ -137,6 +149,8 @@ class GameScene: SKScene {
 
     // MARK: - Scene Setup
     override func didMove(to view: SKView) {
+        
+        setupScoreLabel()
 
         // MARK: - Scrolling Mountain Background
 
@@ -149,9 +163,6 @@ class GameScene: SKScene {
        background2 = SKSpriteNode(
            imageNamed: "mountainBackground"
        )
-
-       // Both backgrounds cover the entire game scene
-        let gameAreaHeight = size.height - controlsAreaHeight
 
         background1.size = CGSize(
             width: 900,
@@ -181,24 +192,6 @@ class GameScene: SKScene {
        addChild(background1)
        addChild(background2)
 
-        // Ground
-//        let ground = SKSpriteNode(
-//            color: .green,
-//            size: CGSize(
-//                width: size.width,
-//                height: groundHeight
-//            )
-//        )
-//
-//        ground.position = CGPoint(
-//            x: size.width / 2,
-//            y: groundHeight / 2
-//        )
-//
-//        addChild(ground)
-        
-        setupScoreLabel()
-
         // Player
         player = SKSpriteNode(
             imageNamed: "idle1"
@@ -221,7 +214,6 @@ class GameScene: SKScene {
         playAnimation("idle")
         
         // Touch Controls
-
         leftButton = createButton(
             title: "LEFT",
             x: 65,
@@ -253,22 +245,44 @@ class GameScene: SKScene {
         // Spawn just beyond the right side of the screen
         let spawnX = size.width + coinSize.width / 2
 
-        // Keep coins above the ground
-        let minimumY: CGFloat = 180
-
-        // Prevent coins from spawning too close to the top
-        let maximumY: CGFloat = 400
-
         coin.position = CGPoint(
             x: spawnX,
-            y: CGFloat.random(in: minimumY...maximumY)
+            y: CGFloat.random(in: coinMinimumY...coinMaximumY)
         )
 
         addChild(coin)
         coins.append(coin)
     }
     
-    
+    func spawnSuperCoin() {
+
+        let superCoin = SKSpriteNode(imageNamed: "superCoin")
+
+        superCoin.size = superCoinSize
+        superCoin.name = "superCoin"
+        superCoin.zPosition = 5
+
+        // Spawn beyond the right edge
+        let spawnX = size.width + superCoinSize.width / 2
+
+        superCoin.position = CGPoint(
+            x: spawnX,
+            y: CGFloat.random(in: coinMinimumY...coinMaximumY)
+        )
+
+        // Prevent overlap with existing coins
+        let overlapsRegularCoin = coins.contains { coin in
+            superCoin.frame.intersects(coin.frame)
+        }
+
+        if overlapsRegularCoin {
+            return
+        }
+
+        addChild(superCoin)
+        superCoins.append(superCoin)
+    }
+
     func updateCoins(deltaTime: CGFloat) {
 
         for coin in coins {
@@ -293,6 +307,32 @@ class GameScene: SKScene {
 
         // Keep only coins that remain in the scene
         coins.removeAll { $0.parent == nil }
+    }
+    
+    func updateSuperCoins(deltaTime: CGFloat) {
+
+        for superCoin in superCoins {
+
+            // Move from right to left
+            superCoin.position.x -= superCoinSpeed * deltaTime
+
+            // Check player collision
+            if superCoin.frame.intersects(player.frame) {
+
+                score += 500
+                scoreLabel.text = "Score: \(score)"
+
+                superCoin.removeFromParent()
+
+            } else if superCoin.position.x < -superCoin.size.width {
+
+                // Remove off-screen super coins
+                superCoin.removeFromParent()
+            }
+        }
+
+        // Remove collected or expired coins from array
+        superCoins.removeAll { $0.parent == nil }
     }
 
     // MARK: - Create Touch Button
@@ -417,6 +457,17 @@ class GameScene: SKScene {
 
         // Move coins and detect collection
         updateCoins(deltaTime: deltaTime)
+        
+        // MARK: - Super Coin Spawning
+        superCoinSpawnTimer += deltaTime
+
+        if superCoinSpawnTimer >= superCoinSpawnInterval {
+            spawnSuperCoin()
+            superCoinSpawnTimer = 0
+        }
+
+        // Move and collect super coins
+        updateSuperCoins(deltaTime: deltaTime)
 
     }
 

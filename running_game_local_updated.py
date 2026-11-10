@@ -215,7 +215,7 @@ class Sparkle(pygame.sprite.Sprite):
 class SkullEnemy(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height, speed):
         super().__init__()
-        self.frames = [load_image(f'running-game-animations/skull-biting-enemy/frame-{i}.png') for i in range(1, 12)]
+        self.frames = [load_image(f'running-game-animations/skull-biting-enemy/skull-{i}.png') for i in range(1, 12)]
         self.frames = [pygame.transform.scale(frame, (width, height)) for frame in self.frames]
         self.current_frame = 0
         self.image = self.frames[self.current_frame]
