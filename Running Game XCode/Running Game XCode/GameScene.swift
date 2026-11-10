@@ -11,7 +11,10 @@ class GameScene: SKScene {
     let backgroundSpeed: CGFloat = 100
     let backgroundOverlap: CGFloat = 2
     
-    var idleTextures: [SKTexture] = []
+    var idleTextures: [SKTexture] =
+    [SKTexture(imageNamed: "idle1"),
+    SKTexture(imageNamed: "idle2")]
+    
     var runTextures: [SKTexture] = []
 
     let jumpUpTexture = SKTexture(imageNamed: "jumpUp")
@@ -28,6 +31,14 @@ class GameScene: SKScene {
     let playerSpeed: CGFloat = 250
     let groundHeight: CGFloat = 70
     
+    
+    // MARK: - Player Lives
+    var lives = 5
+    var isInvincible = false
+
+    let invincibilityDuration: TimeInterval = 2.0
+    var lifeIcons: [SKSpriteNode] = []
+
     // MARK: - Movement
     var movingLeft = false
     var movingRight = false
@@ -46,13 +57,23 @@ class GameScene: SKScene {
 
     // Track multiple fingers independently
     var activeTouches: [UITouch: String] = [:]
+    
+    // MARK: - Skull-Biting Enemies
+    var skullEnemies: [SKSpriteNode] = []
+    var skullTextures: [SKTexture] = []
+
+    var skullSpawnTimer: TimeInterval = 0
+    let skullSpawnInterval: TimeInterval = 4.0
+
+    let skullSpeed: CGFloat = 200
+    let skullSize = CGSize(width: 55, height: 55)
 
     // MARK: - Coins
     var coins: [SKSpriteNode] = []
 
     var coinSpawnTimer: TimeInterval = 0
-    let coinSpawnInterval: TimeInterval = 2.0
-
+    let coinSpawnInterval: TimeInterval = 3.0
+    
     let coinSpeed: CGFloat = 180
     let coinSize = CGSize(width: 30, height: 30)
     
@@ -60,7 +81,7 @@ class GameScene: SKScene {
     var superCoins: [SKSpriteNode] = []
 
     var superCoinSpawnTimer: TimeInterval = 0
-    let superCoinSpawnInterval: TimeInterval = 6.0
+    let superCoinSpawnInterval: TimeInterval = 1.5
 
     let superCoinSpeed: CGFloat = 180
     let superCoinSize = CGSize(width: 40, height: 40)
@@ -78,6 +99,12 @@ class GameScene: SKScene {
     // MARK: - Frame Timing
     var lastUpdateTime: TimeInterval = 0
     
+    func loadSkullAnimations() {
+
+        skullTextures = (1...11).map {
+            SKTexture(imageNamed: "skull-\($0)")
+        }
+    }
     
     func setupScoreLabel() {
 
@@ -110,6 +137,7 @@ class GameScene: SKScene {
             SKTexture(imageNamed: "run\($0)")
         }
     }
+    
     
     func playAnimation(_ animation: String) {
         guard currentAnimation != animation else { return }
@@ -146,14 +174,14 @@ class GameScene: SKScene {
             break
         }
     }
+    
 
     // MARK: - Scene Setup
     override func didMove(to view: SKView) {
         
-        setupScoreLabel()
+       setupScoreLabel()
 
-        // MARK: - Scrolling Mountain Background
-
+       // MARK: - Scrolling Mountain Background
        backgroundColor = .black
 
        background1 = SKSpriteNode(
@@ -212,6 +240,8 @@ class GameScene: SKScene {
         
         loadPlayerAnimations()
         playAnimation("idle")
+        loadSkullAnimations()
+        setupLives()
         
         // Touch Controls
         leftButton = createButton(
@@ -234,6 +264,26 @@ class GameScene: SKScene {
 
     }
     
+    func setupLives() {
+
+        for index in 0..<lives {
+
+            let life = SKSpriteNode(imageNamed: "lives")
+
+            life.size = CGSize(width: 25, height: 25)
+
+            life.position = CGPoint(
+                x: 35 + CGFloat(index) * 35,
+                y: size.height - 75
+            )
+
+            life.zPosition = 100
+
+            addChild(life)
+            lifeIcons.append(life)
+        }
+    }
+
     func spawnCoin() {
 
         let coin = SKSpriteNode(imageNamed: "coin")
@@ -281,6 +331,98 @@ class GameScene: SKScene {
 
         addChild(superCoin)
         superCoins.append(superCoin)
+    }
+    
+    func spawnSkullEnemy() {
+
+        guard !skullTextures.isEmpty else { return }
+
+        let skull = SKSpriteNode(texture: skullTextures[0])
+
+        skull.size = skullSize
+        skull.name = "skullEnemy"
+        skull.zPosition = 5
+
+        // Spawn outside the right edge
+        skull.position = CGPoint(
+            x: size.width + skullSize.width / 2,
+            y: groundHeight + skullSize.height / 2
+        )
+
+        // Animate the biting skull continuously
+        let bitingAnimation = SKAction.animate(
+            with: skullTextures,
+            timePerFrame: 4.0 / 60.0
+        )
+
+        skull.run(
+            SKAction.repeatForever(bitingAnimation),
+            withKey: "skullBiting"
+        )
+
+        addChild(skull)
+        skullEnemies.append(skull)
+    }
+    
+    
+    func checkSkullCollisions() {
+
+        guard !isInvincible, lives > 0 else { return }
+
+        for skull in skullEnemies {
+
+            if player.frame.intersects(skull.frame) {
+
+                takeDamage()
+                break
+            }
+        }
+    }
+    
+    
+    func takeDamage() {
+
+        guard !isInvincible, lives > 0 else { return }
+
+        lives -= 1
+        isInvincible = true
+
+        // Remove one life icon
+        if let lastLife = lifeIcons.popLast() {
+            lastLife.removeFromParent()
+        }
+
+        if lives == 0 {
+            player.removeAllActions()
+            player.alpha = 1.0
+
+            // We'll add the Game Over screen next
+            return
+        }
+
+        // Flash the player after taking damage
+        let fadeOut = SKAction.fadeAlpha(to: 0.2, duration: 0.1)
+        let fadeIn = SKAction.fadeAlpha(to: 1.0, duration: 0.1)
+
+        let flash = SKAction.sequence([fadeOut, fadeIn])
+
+        let repeatFlash = SKAction.repeat(
+            flash,
+            count: Int(invincibilityDuration / 0.2)
+        )
+
+        let finishInvincibility = SKAction.run { [weak self] in
+            self?.player.alpha = 1.0
+            self?.isInvincible = false
+        }
+
+        player.run(
+            SKAction.sequence([
+                repeatFlash,
+                finishInvincibility
+            ]),
+            withKey: "invincibility"
+        )
     }
 
     func updateCoins(deltaTime: CGFloat) {
@@ -334,7 +476,24 @@ class GameScene: SKScene {
         // Remove collected or expired coins from array
         superCoins.removeAll { $0.parent == nil }
     }
+    
+    func updateSkullEnemies(deltaTime: CGFloat) {
 
+        for skull in skullEnemies {
+
+            // Move toward the player
+            skull.position.x -= skullSpeed * deltaTime
+
+            // Remove skulls after leaving the screen
+            if skull.position.x < -skull.size.width {
+                skull.removeFromParent()
+            }
+        }
+
+        skullEnemies.removeAll { $0.parent == nil }
+    }
+    
+    
     // MARK: - Create Touch Button
     func createButton(
         title: String,
@@ -468,7 +627,20 @@ class GameScene: SKScene {
 
         // Move and collect super coins
         updateSuperCoins(deltaTime: deltaTime)
+        
+        
+        // MARK: - Skull Enemy Spawning
+        skullSpawnTimer += deltaTime
 
+        if skullSpawnTimer >= skullSpawnInterval {
+            spawnSkullEnemy()
+            skullSpawnTimer = 0
+        }
+
+        // Move skull enemies
+        updateSkullEnemies(deltaTime: deltaTime)
+        
+        checkSkullCollisions()
     }
 
     // MARK: - Jump
