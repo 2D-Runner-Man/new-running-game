@@ -8,7 +8,7 @@ class GameScene: SKScene {
     var player = SKSpriteNode()
 
     let playerSpeed: CGFloat = 250
-    let groundHeight: CGFloat = 80
+    let groundHeight: CGFloat = 70
     
     // MARK: - Scoring
     var score = 0
@@ -59,6 +59,8 @@ class GameScene: SKScene {
 
     let jumpUpTexture = SKTexture(imageNamed: "jumpUp")
     let jumpFallTexture = SKTexture(imageNamed: "jumpFall")
+    
+    let controlsAreaHeight: CGFloat = 100
 
     var currentAnimation = ""
     var facingRight = true
@@ -149,21 +151,23 @@ class GameScene: SKScene {
        )
 
        // Both backgrounds cover the entire game scene
-       background1.size = CGSize(
-           width: size.width,
-           height: size.height
-       )
+        let gameAreaHeight = size.height - controlsAreaHeight
 
-       background2.size = CGSize(
-           width: size.width,
-           height: size.height
-       )
+        background1.size = CGSize(
+            width: 900,
+            height: 500
+        )
+
+        background2.size = CGSize(
+            width: 900,
+            height: 500
+        )
 
        // Position backgrounds side by side
-       background1.position = CGPoint(
-           x: size.width / 2,
-           y: size.height / 2
-       )
+        background1.position = CGPoint(
+            x: size.width / 2,
+            y: size.height / 2
+        )
 
         background2.position = CGPoint(
             x: size.width * 1.5 - backgroundOverlap,
@@ -215,25 +219,27 @@ class GameScene: SKScene {
         
         loadPlayerAnimations()
         playAnimation("idle")
-
+        
         // Touch Controls
+
         leftButton = createButton(
             title: "LEFT",
             x: 65,
-            width: 110
+            width: 100
         )
 
         jumpButton = createButton(
             title: "JUMP",
             x: size.width / 2,
-            width: 130
+            width: 120
         )
 
         rightButton = createButton(
             title: "RIGHT",
             x: size.width - 65,
-            width: 110
+            width: 100
         )
+
     }
     
     func spawnCoin() {
@@ -247,9 +253,11 @@ class GameScene: SKScene {
         // Spawn just beyond the right side of the screen
         let spawnX = size.width + coinSize.width / 2
 
-        // Random height above the ground
-        let minimumY = groundHeight + 45
-        let maximumY = size.height - 80
+        // Keep coins above the ground
+        let minimumY: CGFloat = 180
+
+        // Prevent coins from spawning too close to the top
+        let maximumY: CGFloat = 400
 
         coin.position = CGPoint(
             x: spawnX,
@@ -287,8 +295,6 @@ class GameScene: SKScene {
         coins.removeAll { $0.parent == nil }
     }
 
-
-
     // MARK: - Create Touch Button
     func createButton(
         title: String,
@@ -301,7 +307,7 @@ class GameScene: SKScene {
             cornerRadius: 10
         )
 
-        button.position = CGPoint(x: x, y: 40)
+        button.position = CGPoint(x: x, y: 30)
         button.fillColor = .black.withAlphaComponent(0.65)
         button.strokeColor = .white
         button.lineWidth = 2
@@ -333,7 +339,7 @@ class GameScene: SKScene {
 
         let deltaTime = min(
             CGFloat(currentTime - lastUpdateTime),
-            1.0 / 30.0
+            1.0 / 60.0
         )
 
         lastUpdateTime = currentTime
@@ -425,8 +431,6 @@ class GameScene: SKScene {
     
     
     // MARK: - Scroll Background
-    
-    
     func scrollBackground(deltaTime: CGFloat) {
 
         let movement = backgroundSpeed * deltaTime
