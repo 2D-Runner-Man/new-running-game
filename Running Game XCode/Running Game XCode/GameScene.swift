@@ -31,7 +31,6 @@ class GameScene: SKScene {
     let playerSpeed: CGFloat = 250
     let groundHeight: CGFloat = 70
     
-    
     // MARK: - Player Lives
     var lives = 5
     var isInvincible = false
@@ -95,6 +94,9 @@ class GameScene: SKScene {
     var scoreTimer: TimeInterval = 0
 
     let scoreLabel = SKLabelNode(fontNamed: "Arial-BoldMT")
+    
+    // MARK: - Game Over
+    var isGameOver = false
 
     // MARK: - Frame Timing
     var lastUpdateTime: TimeInterval = 0
@@ -264,6 +266,40 @@ class GameScene: SKScene {
 
     }
     
+    // MARK: - Create Touch Button
+    func createButton(
+        title: String,
+        x: CGFloat,
+        width: CGFloat
+    ) -> SKShapeNode {
+
+        let button = SKShapeNode(
+            rectOf: CGSize(width: width, height: 55),
+            cornerRadius: 10
+        )
+
+        button.position = CGPoint(x: x, y: 30)
+        button.fillColor = .black.withAlphaComponent(0.65)
+        button.strokeColor = .white
+        button.lineWidth = 2
+        button.zPosition = 10
+
+        button.name = title
+
+        let label = SKLabelNode(text: title)
+        label.fontName = "Helvetica-Bold"
+        label.fontSize = 22
+        label.fontColor = .white
+        label.verticalAlignmentMode = .center
+        label.horizontalAlignmentMode = .center
+        label.zPosition = 11
+
+        button.addChild(label)
+        addChild(button)
+
+        return button
+    }
+    
     func setupLives() {
 
         for index in 0..<lives {
@@ -380,6 +416,89 @@ class GameScene: SKScene {
     }
     
     
+    func showGameOverScreen() {
+        guard !isGameOver else { return }
+
+        isGameOver = true
+
+        let overlay = SKNode()
+        overlay.name = "gameOverOverlay"
+        overlay.zPosition = 200
+
+        // Original dark gray background
+        let background = SKShapeNode(
+            rectOf: size
+        )
+        background.fillColor = UIColor(
+            red: 32 / 255,
+            green: 32 / 255,
+            blue: 32 / 255,
+            alpha: 1
+        )
+        background.strokeColor = .clear
+        background.position = CGPoint(
+            x: size.width / 2,
+            y: size.height / 2
+        )
+        overlay.addChild(background)
+
+        // Original Game Over image
+        let gameOverImage = SKSpriteNode(
+            imageNamed: "gameOverScreen"
+        )
+        gameOverImage.position = CGPoint(
+            x: size.width / 2,
+            y: size.height / 2 + 20
+        )
+        gameOverImage.zPosition = 2
+        overlay.addChild(gameOverImage)
+
+        // Original damage message
+        let message = SKLabelNode(fontNamed: "Arial-BoldMT")
+        message.text = "You got hit too many times"
+        message.fontSize = 24
+        message.fontColor = .white
+        message.position = CGPoint(
+            x: size.width / 2,
+            y: size.height / 2 - 30
+        )
+        overlay.addChild(message)
+        message.zPosition = 3
+        
+        // Restart button
+        let restartButton = SKShapeNode(
+            rectOf: CGSize(width: 180, height: 55),
+            cornerRadius: 10
+        )
+        restartButton.name = "restartButton"
+        restartButton.fillColor = UIColor(
+            red: 200 / 255,
+            green: 0,
+            blue: 0,
+            alpha: 1
+        )
+        restartButton.strokeColor = .clear
+        restartButton.position = CGPoint(
+            x: size.width / 2,
+            y: size.height / 2 - 110
+        )
+
+        let restartLabel = SKLabelNode(fontNamed: "Arial-BoldMT")
+        restartLabel.text = "Restart"
+        restartLabel.name = "restartButton"
+        restartLabel.fontSize = 25
+        restartLabel.fontColor = .white
+        restartLabel.verticalAlignmentMode = .center
+        
+        // Keep text above the button background
+        restartLabel.zPosition = 2
+
+        restartButton.addChild(restartLabel)
+        overlay.addChild(restartButton)
+
+        addChild(overlay)
+    }
+    
     func takeDamage() {
 
         guard !isInvincible, lives > 0 else { return }
@@ -396,7 +515,7 @@ class GameScene: SKScene {
             player.removeAllActions()
             player.alpha = 1.0
 
-            // We'll add the Game Over screen next
+            showGameOverScreen()
             return
         }
 
@@ -494,42 +613,23 @@ class GameScene: SKScene {
     }
     
     
-    // MARK: - Create Touch Button
-    func createButton(
-        title: String,
-        x: CGFloat,
-        width: CGFloat
-    ) -> SKShapeNode {
+    func restartGame() {
 
-        let button = SKShapeNode(
-            rectOf: CGSize(width: width, height: 55),
-            cornerRadius: 10
+        guard let view = self.view else { return }
+
+        let newScene = GameScene(size: size)
+        newScene.scaleMode = scaleMode
+
+        view.presentScene(
+            newScene,
+            transition: SKTransition.fade(withDuration: 0.5)
         )
-
-        button.position = CGPoint(x: x, y: 30)
-        button.fillColor = .black.withAlphaComponent(0.65)
-        button.strokeColor = .white
-        button.lineWidth = 2
-        button.zPosition = 10
-
-        button.name = title
-
-        let label = SKLabelNode(text: title)
-        label.fontName = "Helvetica-Bold"
-        label.fontSize = 22
-        label.fontColor = .white
-        label.verticalAlignmentMode = .center
-        label.horizontalAlignmentMode = .center
-        label.zPosition = 11
-
-        button.addChild(label)
-        addChild(button)
-
-        return button
     }
 
     // MARK: - Update Game
     override func update(_ currentTime: TimeInterval) {
+        
+        guard !isGameOver else { return }
 
         if lastUpdateTime == 0 {
             lastUpdateTime = currentTime
@@ -652,7 +752,6 @@ class GameScene: SKScene {
         }
     }
     
-    
     // MARK: - Scroll Background
     func scrollBackground(deltaTime: CGFloat) {
 
@@ -709,6 +808,25 @@ class GameScene: SKScene {
         _ touches: Set<UITouch>,
         with event: UIEvent?
     ) {
+        
+        if isGameOver {
+
+            for touch in touches {
+
+                let location = touch.location(in: self)
+                let touchedNodes = nodes(at: location)
+
+                if touchedNodes.contains(where: {
+                    $0.name == "restartButton" ||
+                    $0.parent?.name == "restartButton"
+                }) {
+                    restartGame()
+                    return
+                }
+            }
+
+            return
+        }
 
         for touch in touches {
 
@@ -730,6 +848,8 @@ class GameScene: SKScene {
         _ touches: Set<UITouch>,
         with event: UIEvent?
     ) {
+        
+        guard !isGameOver else { return }
 
         for touch in touches {
 
@@ -755,6 +875,7 @@ class GameScene: SKScene {
         _ touches: Set<UITouch>,
         with event: UIEvent?
     ) {
+        guard !isGameOver else { return }
 
         for touch in touches {
             activeTouches.removeValue(forKey: touch)
@@ -775,4 +896,5 @@ class GameScene: SKScene {
 
         updateMovementControls()
     }
+
 }
