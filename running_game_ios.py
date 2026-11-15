@@ -293,7 +293,6 @@ class Player(pygame.sprite.Sprite):
         self.jumping = True
 
     
-    
     def draw(self, screen):
         """Draw player with flashing invulnerability effect."""
 
@@ -487,7 +486,6 @@ def game_loop(player_name):
             )
 
         # Continue with background scrolling below
-
         if not paused:
             # Scroll the background
             bg_x1 -= 2  # Adjust the speed of the scrolling

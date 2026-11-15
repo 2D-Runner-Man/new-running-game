@@ -127,6 +127,8 @@ class Player(pygame.sprite.Sprite):
         self.facing_right = True
         self.name = name
         self.lives = 5 # Default Lives
+        
+        # Invulnerability properties
         self.invulnerable = False
         self.invulnerable_timer = 0
         self.flash_timer = 0
@@ -136,20 +138,29 @@ class Player(pygame.sprite.Sprite):
         self.animation_counter = 0
         self.is_moving = False  # Track movement state
 
-    def update(self, controller):
-        """Update player movement and animations while keeping it within screen bounds."""
-        self.is_moving = False
-        
-        # Handle invulnerability after being hit
+        # Update invulnerability frames
         if self.invulnerable:
             self.invulnerable_timer -= 1
             self.flash_timer += 1
 
-        # Stop invulnerability after 3 seconds
-        if self.invulnerable_timer <= 0:
-            self.invulnerable = False
-            self.is_moving = False  # Reset movement state
-            self.flash_timer = 0
+            if self.invulnerable_timer <= 0:
+                self.invulnerable = False
+                self.invulnerable_timer = 0
+                self.flash_timer = 0
+
+    def update(self, controller):
+        """Update player movement and animations while keeping it within screen bounds."""
+        self.is_moving = False
+        
+        # Invulnerability countdown
+        if self.invulnerable:
+            self.invulnerable_timer -= 1
+            self.flash_timer += 1
+        
+            if self.invulnerable_timer <= 0:
+                self.invulnerable = False
+                self.invulnerable_timer = 0
+                self.flash_timer = 0 
 
         if controller["up"] and not self.jumping:
             self.y_velocity = -18
@@ -228,24 +239,31 @@ class Player(pygame.sprite.Sprite):
         self.animation_counter = 0
 
     def draw(self, screen):
-        """Draw the player and their name."""
-            # Flash the player while invulnerable
-        if self.invulnerable:
-                # Blink between normal and transparent
-                if self.flash_timer % 10 < 5:
-                    self.image.set_alpha(255)
-                else:
-                    self.image.set_alpha(80)
-        else:
-            self.image.set_alpha(255)
+        """Draw player with flashing invulnerability effect."""
 
-        screen.blit(self.image, self.rect.topleft)
-
-        name_surface = font.render(self.name, True, BLACK)
+        # Hide player every other 5 frames
+        show_player = (
+            not self.invulnerable
+            or self.flash_timer % 10 < 5
+        )
+    
+        if show_player:
+            screen.blit(self.image, self.rect.topleft)
+    
+        # Always draw player name
+        name_surface = font.render(
+            self.name,
+            True,
+            BLACK
+        )
+    
         screen.blit(
             name_surface,
             name_surface.get_rect(
-                    center=(self.rect.centerx, self.rect.top - 10)
+                center=(
+                    self.rect.centerx,
+                    self.rect.top - 10
+                )
             )
         )
 
@@ -369,7 +387,7 @@ def game_loop(player_name):
                 elif event.key == pygame.K_ESCAPE and key_state:
                     return
 
-         # Scroll the background
+        # Scroll the background
         if not paused:
             bg_x1 -= 2  # Adjust the speed of the scrolling
             bg_x2 -= 2
@@ -422,42 +440,49 @@ def game_loop(player_name):
                     play_skull_sound()
 
         # Collision Effects
-        if not paused and not player.invulnerable:
+        if not paused:
 
-            if pygame.sprite.spritecollide(player, skull_enemies, True):
+            # Check skull collisions only when vulnerable
+            if not player.invulnerable:
 
-                # Remove one life
-                player.lives -= 1
+                if pygame.sprite.spritecollide(player, skull_enemies, False):
 
-                # Respawn player
-                player.respawn()
+                    # Remove one life
+                    player.lives -= 1
 
-                # Activate invulnerability frames
-                player.invulnerable = True
-                player.invulnerable_timer = 180
-                player.flash_timer = 0
+                    # Respawn player
+                    player.respawn()
 
-                # Delay enemy spawning
-                respawn_timer = 180
+                    # Activate invulnerability
+                    player.invulnerable = True
+                    player.invulnerable_timer = 180
+                    player.flash_timer = 0
 
-        if pygame.sprite.spritecollide(player, skull_enemies, True):
-            player.respawn()
-            player.lives -= 1
-            respawn_timer = 180
+                    # Delay enemy spawning
+                    respawn_timer = 180
 
-        if pygame.sprite.spritecollide(player, coins, True):
-            score += 100
-            sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 60, 60))
-            play_coin_sound()
-            
-        if pygame.sprite.spritecollide(player, super_coins, True):
-            score += 500
-            # Bigger sparkle
-            sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 70, 70))
-            play_coin_sound()
-        
-        if respawn_timer > 0:
-            respawn_timer -= 1
+                    # Play collision sound
+                    play_skull_sound()
+
+            # Coins can still be collected while invulnerable
+            if pygame.sprite.spritecollide(player, coins, True):
+                score += 100
+                sparkles.add(
+                    Sparkle(player.rect.centerx, player.rect.top, 60, 60)
+                )
+                play_coin_sound()
+
+            if pygame.sprite.spritecollide(player, super_coins, True):
+                score += 500
+                sparkles.add(
+                    Sparkle(player.rect.centerx, player.rect.top, 70, 70)
+                )
+                play_coin_sound()
+
+            # Update respawn timer
+            if respawn_timer > 0:
+                respawn_timer -= 1
+
 
         # Draws everything
         # all_sprites.draw(screen)
