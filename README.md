@@ -24,7 +24,7 @@
 ![Start Screen](images/title.png)
 
 ### Controls
-![Controls Screen](images/controls-white.png)
+![Controls Screen](images/controls-white-pause.png)
 
 ### Running Action
 ![Action Shot](images/action.png)

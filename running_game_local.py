@@ -41,6 +41,10 @@ pygame.mixer.music.play(-1)  # Loop indefinitely
 coin_sound = pygame.mixer.Sound("music/coin-get.mp3")
 coin_sound.set_volume(0.3)  # Lower the volume of the coin sound
 
+# Load skull sound effect
+skull_sound = pygame.mixer.Sound("music/skull-sound.wav")
+skull_sound.set_volume(0.3)
+
 # Function to load images
 # import os
 # import pygame
@@ -66,10 +70,14 @@ def load_image(filename):
 
     return pygame.image.load(full_path).convert_alpha()
 
-# Function to play coin sound
+# Function to play sounds
 def play_coin_sound():
     pygame.mixer.music.set_volume(0.5)
     coin_sound.play()
+
+def play_skull_sound():
+    pygame.mixer.music.set_volume(0.5)
+    skull_sound.play()
 
 # Screen setup
 SCREEN_WIDTH, SCREEN_HEIGHT = 900, 500
@@ -178,7 +186,6 @@ class Player(pygame.sprite.Sprite):
         # Animate player sprite
         self.animate()
 
-
     def animate(self):
         """Handle animation transitions for running, jumping, and idle states."""
         if self.jumping:
@@ -284,6 +291,29 @@ class Sparkle(pygame.sprite.Sprite):
         if self.lifetime <= 0:
             self.kill()
 
+class SkullEnemy(pygame.sprite.Sprite):
+    def __init__(self, x, y, width, height, speed):
+        super().__init__()
+        self.frames = [load_image(f'running-game-animations/skull-biting-enemy/skull-{i}.png') for i in range(1, 12)]
+        self.frames = [pygame.transform.scale(frame, (width, height)) for frame in self.frames]
+        self.current_frame = 0
+        self.image = self.frames[self.current_frame]
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.speed = speed
+        self.animation_counter = 0
+        self.animation_speed = 4
+
+    def update(self):
+        self.rect.x -= self.speed
+        if self.rect.right < 0:
+            self.kill()
+
+        self.animation_counter += 1
+        if self.animation_counter >= self.animation_speed:
+            self.animation_counter = 0
+            self.current_frame = (self.current_frame + 1) % len(self.frames)
+            self.image = self.frames[self.current_frame]
+
 class Obstacle(pygame.sprite.Sprite):
     """The obstacle class."""
     def __init__(self, x, y, width, height, speed):
@@ -310,6 +340,7 @@ def game_loop(player_name):
     coins = pygame.sprite.Group()
     super_coins = pygame.sprite.Group()
     sparkles = pygame.sprite.Group()
+    skull_enemies = pygame.sprite.Group()
     controller, obstacle_timer, spawn_interval, score, respawn_timer = {"left": False, "right": False, "up": False}, 0, 90, 0, 0
     paused = False
     pause_button = pygame.Rect(840, 5, 55, 35)
@@ -338,9 +369,8 @@ def game_loop(player_name):
                 elif event.key == pygame.K_ESCAPE and key_state:
                     return
 
-            
+         # Scroll the background
         if not paused:
-            # Scroll the background
             bg_x1 -= 2  # Adjust the speed of the scrolling
             bg_x2 -= 2
             if bg_x1 <= -SCREEN_WIDTH:
@@ -348,10 +378,10 @@ def game_loop(player_name):
             if bg_x2 <= -SCREEN_WIDTH:
                 bg_x2 = SCREEN_WIDTH
 
-
             # Update Sprites
             all_sprites.update(controller)
-            obstacles.update()
+            # obstacles.update()
+            skull_enemies.update()
             coins.update()
             super_coins.update()
             sparkles.update()
@@ -379,7 +409,7 @@ def game_loop(player_name):
                 coin_y = GROUND_Y - 175
                 super_coin_x = SCREEN_WIDTH + random.randint(200, 500)
                 super_coin_y = GROUND_Y - 275 # Above regular coin
-                obstacles.add(Obstacle(obstacle_x, obstacle_y, 75, 75, speed=6)) # Spawns Obstacles
+                # obstacles.add(Obstacle(obstacle_x, obstacle_y, 75, 75, speed=6)) # Spawns Obstacles
                 coins.add(Coin(obstacle_x, coin_y, 50, 50, speed=10)) # Spawns Coins
 
                 while any(abs(super_coin_x - coin.rect.x) < 75 for coin in super_coins):
@@ -387,17 +417,33 @@ def game_loop(player_name):
 
                 super_coins.add(SuperCoin(super_coin_x, super_coin_y, 50, 50, speed=3)) # Spawns Super Coins
 
-        if not player.invulnerable:
-            if pygame.sprite.spritecollide(player, obstacles, False):
-                player.respawn()
+                if random.random() < 0.5:
+                    skull_enemies.add(SkullEnemy(obstacle_x + 150, obstacle_y, 75, 75, speed=5))
+                    play_skull_sound()
+
+        # Collision Effects
+        if not paused and not player.invulnerable:
+
+            if pygame.sprite.spritecollide(player, skull_enemies, True):
+
+                # Remove one life
                 player.lives -= 1
 
-                # Start invincibility frames
+                # Respawn player
+                player.respawn()
+
+                # Activate invulnerability frames
                 player.invulnerable = True
                 player.invulnerable_timer = 180
                 player.flash_timer = 0
 
+                # Delay enemy spawning
                 respawn_timer = 180
+
+        if pygame.sprite.spritecollide(player, skull_enemies, True):
+            player.respawn()
+            player.lives -= 1
+            respawn_timer = 180
 
         if pygame.sprite.spritecollide(player, coins, True):
             score += 100
@@ -409,14 +455,15 @@ def game_loop(player_name):
             # Bigger sparkle
             sparkles.add(Sparkle(player.rect.centerx, player.rect.top, 70, 70))
             play_coin_sound()
-
+        
         if respawn_timer > 0:
             respawn_timer -= 1
 
         # Draws everything
-        all_sprites.draw(screen)
+        # all_sprites.draw(screen)
         player.draw(screen)
-        obstacles.draw(screen)
+        # obstacles.draw(screen)
+        skull_enemies.draw(screen)
         coins.draw(screen)
         super_coins.draw(screen)
         sparkles.draw(screen)
@@ -463,8 +510,8 @@ def game_loop(player_name):
             )
 
             screen.blit(resume_text, resume_rect)
-        pygame.display.flip()
 
+        pygame.display.flip()
         clock.tick(60) # Cap the frame rate
 
     pygame.mixer.music.stop() # Stops music
