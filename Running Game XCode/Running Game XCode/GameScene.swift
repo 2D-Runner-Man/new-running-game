@@ -101,6 +101,287 @@ class GameScene: SKScene {
     // MARK: - Frame Timing
     var lastUpdateTime: TimeInterval = 0
     
+    var currentScreen: GameScreen = .start
+    var playerName = ""
+    
+    // MARK: All Screens
+    enum GameScreen {
+        case start
+        case controls
+        case nameEntry
+        case playing
+        case gameOver
+    }
+    
+    func showStartScreen() {
+
+        currentScreen = .start
+
+        let overlay = SKNode()
+        overlay.name = "startScreen"
+        overlay.zPosition = 300
+
+        let background = SKShapeNode(rectOf: size)
+        background.fillColor = UIColor(
+            red: 32 / 255,
+            green: 32 / 255,
+            blue: 32 / 255,
+            alpha: 1
+        )
+        background.strokeColor = .clear
+        background.position = CGPoint(
+            x: size.width / 2,
+            y: size.height / 2
+        )
+        overlay.addChild(background)
+
+        let title = SKLabelNode(fontNamed: "Arial-BoldMT")
+        title.text = "RUNNING GAME"
+        title.fontSize = 55
+        title.fontColor = .white
+        title.position = CGPoint(
+            x: size.width / 2,
+            y: size.height / 2 + 80
+        )
+        overlay.addChild(title)
+
+        let playButton = SKShapeNode(
+            rectOf: CGSize(width: 180, height: 55),
+            cornerRadius: 10
+        )
+
+        playButton.name = "playButton"
+        playButton.fillColor = .red
+        playButton.strokeColor = .white
+        playButton.lineWidth = 3
+        playButton.position = CGPoint(
+            x: size.width / 2,
+            y: size.height / 2 - 60
+        )
+
+        let playLabel = SKLabelNode(fontNamed: "Arial-BoldMT")
+        playLabel.text = "PLAY"
+        playLabel.name = "playButton"
+        playLabel.fontSize = 25
+        playLabel.fontColor = .white
+        playLabel.verticalAlignmentMode = .center
+
+        playButton.addChild(playLabel)
+        overlay.addChild(playButton)
+
+        addChild(overlay)
+    }
+    
+    func showControlsScreen() {
+
+        currentScreen = .controls
+
+        let overlay = SKNode()
+        overlay.name = "controlsScreen"
+        overlay.zPosition = 300
+
+        // Background
+        let background = SKShapeNode(rectOf: size)
+        background.fillColor = UIColor(
+            red: 32 / 255,
+            green: 32 / 255,
+            blue: 32 / 255,
+            alpha: 1
+        )
+        background.strokeColor = .clear
+        background.position = CGPoint(
+            x: size.width / 2,
+            y: size.height / 2
+        )
+        overlay.addChild(background)
+
+        // Title
+        let title = SKLabelNode(fontNamed: "Arial-BoldMT")
+        title.text = "CONTROLS"
+        title.fontSize = 45
+        title.fontColor = .white
+        title.position = CGPoint(
+            x: size.width / 2,
+            y: size.height / 2 + 140
+        )
+        overlay.addChild(title)
+
+        // Instructions
+        let instructions = [
+            "LEFT - Move Left",
+            "RIGHT - Move Right",
+            "JUMP - Jump Over Enemies",
+            "Collect Coins to Earn Points",
+            "Avoid Skull Enemies!"
+        ]
+
+        for (index, instruction) in instructions.enumerated() {
+
+            let label = SKLabelNode(fontNamed: "Arial")
+            label.text = instruction
+            label.fontSize = 22
+            label.fontColor = .white
+            label.position = CGPoint(
+                x: size.width / 2,
+                y: size.height / 2 + 70 - CGFloat(index) * 45
+            )
+
+            overlay.addChild(label)
+        }
+
+        // Continue button
+        let continueButton = SKShapeNode(
+            rectOf: CGSize(width: 180, height: 55),
+            cornerRadius: 10
+        )
+
+        continueButton.name = "continueButton"
+        continueButton.fillColor = .red
+        continueButton.strokeColor = .white
+        continueButton.lineWidth = 3
+        continueButton.zPosition = 4
+        continueButton.position = CGPoint(
+            x: size.width / 2,
+            y: 55
+        )
+
+        let continueLabel = SKLabelNode(fontNamed: "Arial-BoldMT")
+        continueLabel.text = "CONTINUE"
+        continueLabel.name = "continueButton"
+        continueLabel.fontSize = 24
+        continueLabel.fontColor = .white
+        continueLabel.verticalAlignmentMode = .center
+
+        continueButton.addChild(continueLabel)
+        overlay.addChild(continueButton)
+
+        addChild(overlay)
+    }
+
+    func showNameEntryScreen() {
+
+        currentScreen = .nameEntry
+
+        let overlay = SKNode()
+        overlay.name = "nameEntryScreen"
+        overlay.zPosition = 300
+
+        // Background
+        let background = SKShapeNode(rectOf: size)
+        background.fillColor = UIColor(
+            red: 32 / 255,
+            green: 32 / 255,
+            blue: 32 / 255,
+            alpha: 1
+        )
+        background.strokeColor = .clear
+        background.position = CGPoint(
+            x: size.width / 2,
+            y: size.height / 2
+        )
+        overlay.addChild(background)
+
+        // Title
+        let title = SKLabelNode(fontNamed: "Arial-BoldMT")
+        title.text = "ENTER YOUR NAME"
+        title.fontSize = 45
+        title.fontColor = .white
+        title.position = CGPoint(
+            x: size.width / 2,
+            y: size.height / 2 + 100
+        )
+        overlay.addChild(title)
+
+        // Name display
+        let nameLabel = SKLabelNode(fontNamed: "Arial-BoldMT")
+        nameLabel.name = "playerNameLabel"
+        nameLabel.text = "Tap here to enter your name"
+        nameLabel.fontSize = 25
+        nameLabel.fontColor = .white
+        nameLabel.position = CGPoint(
+            x: size.width / 2,
+            y: size.height / 2
+        )
+        overlay.addChild(nameLabel)
+
+        // Start Game button
+        let startButton = SKShapeNode(
+            rectOf: CGSize(width: 200, height: 55),
+            cornerRadius: 10
+        )
+
+        startButton.name = "startGameButton"
+        startButton.fillColor = .red
+        startButton.strokeColor = .white
+        startButton.lineWidth = 3
+        startButton.position = CGPoint(
+            x: size.width / 2,
+            y: size.height / 2 - 100
+        )
+
+        let startLabel = SKLabelNode(fontNamed: "Arial-BoldMT")
+        startLabel.text = "START GAME"
+        startLabel.name = "startGameButton"
+        startLabel.fontSize = 23
+        startLabel.fontColor = .white
+        startLabel.verticalAlignmentMode = .center
+
+        startButton.addChild(startLabel)
+        overlay.addChild(startButton)
+
+        addChild(overlay)
+    }
+    
+    func promptForPlayerName() {
+
+        guard let viewController = view?.window?.rootViewController else {
+            return
+        }
+
+        let alert = UIAlertController(
+            title: "Player Name",
+            message: "Enter your name",
+            preferredStyle: .alert
+        )
+
+        alert.addTextField { textField in
+            textField.placeholder = "Your name"
+            textField.text = self.playerName
+            textField.autocapitalizationType = .words
+            textField.returnKeyType = .done
+        }
+
+        let saveAction = UIAlertAction(
+            title: "Save",
+            style: .default
+        ) { [weak self] _ in
+
+            guard let self = self else { return }
+
+            let enteredName = alert.textFields?.first?.text?
+                .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+            self.playerName = enteredName
+
+            if let nameLabel = self.childNode(
+                withName: "//playerNameLabel"
+            ) as? SKLabelNode {
+
+                nameLabel.text = enteredName.isEmpty
+                    ? "Tap here to enter your name"
+                    : enteredName
+            }
+        }
+
+        alert.addAction(saveAction)
+
+        alert.addAction(
+            UIAlertAction(title: "Cancel", style: .cancel)
+        )
+
+        viewController.present(alert, animated: true)
+    }
+
     func loadSkullAnimations() {
 
         skullTextures = (1...11).map {
@@ -128,7 +409,6 @@ class GameScene: SKScene {
         addChild(scoreLabel)
     }
 
-    
     // MARK - Create Animation Frames
     func loadPlayerAnimations() {
         idleTextures = (1...2).map {
@@ -257,13 +537,19 @@ class GameScene: SKScene {
             x: size.width / 2,
             width: 120
         )
+        
+        // Move JUMP button slightly upward
+        jumpButton.position.y += 5
 
         rightButton = createButton(
             title: "RIGHT",
             x: size.width - 65,
             width: 100
         )
-
+        
+        if currentScreen == .start {
+            showStartScreen()
+        }
     }
     
     // MARK: - Create Touch Button
@@ -415,7 +701,23 @@ class GameScene: SKScene {
         }
     }
     
-    
+    func animateRestartButton(_ button: SKNode) {
+
+        // Expand the button to 110% of its original size
+        let expand = SKAction.scale(to: 1.1, duration: 0.12)
+
+        // Return to its original size
+        let shrink = SKAction.scale(to: 1.0, duration: 0.12)
+
+        expand.timingMode = .easeOut
+        shrink.timingMode = .easeIn
+
+        button.run(
+            SKAction.sequence([expand, shrink]),
+            withKey: "restartAnimation"
+        )
+    }
+
     func showGameOverScreen() {
         guard !isGameOver else { return }
 
@@ -456,7 +758,7 @@ class GameScene: SKScene {
         // Original damage message
         let message = SKLabelNode(fontNamed: "Arial-BoldMT")
         message.text = "You got hit too many times"
-        message.fontSize = 24
+        message.fontSize = 35
         message.fontColor = .white
         message.position = CGPoint(
             x: size.width / 2,
@@ -471,13 +773,14 @@ class GameScene: SKScene {
             cornerRadius: 10
         )
         restartButton.name = "restartButton"
-        restartButton.fillColor = UIColor(
-            red: 200 / 255,
-            green: 0,
-            blue: 0,
-            alpha: 1
-        )
-        restartButton.strokeColor = .clear
+        restartButton.fillColor = .black
+        
+        restartButton.strokeColor = .white
+        restartButton.lineWidth = 3
+        
+        // Display the button above the Game Over image
+        restartButton.zPosition = 4
+        
         restartButton.position = CGPoint(
             x: size.width / 2,
             y: size.height / 2 - 110
@@ -611,14 +914,16 @@ class GameScene: SKScene {
 
         skullEnemies.removeAll { $0.parent == nil }
     }
-    
-    
+
     func restartGame() {
 
         guard let view = self.view else { return }
 
         let newScene = GameScene(size: size)
         newScene.scaleMode = scaleMode
+
+        // Skip the Start Screen when restarting
+        newScene.currentScreen = .playing
 
         view.presentScene(
             newScene,
@@ -629,7 +934,10 @@ class GameScene: SKScene {
     // MARK: - Update Game
     override func update(_ currentTime: TimeInterval) {
         
-        guard !isGameOver else { return }
+        guard currentScreen == .playing && !isGameOver else {
+            lastUpdateTime = currentTime
+            return
+        }
 
         if lastUpdateTime == 0 {
             lastUpdateTime = currentTime
@@ -809,7 +1117,8 @@ class GameScene: SKScene {
         with event: UIEvent?
     ) {
         
-        if isGameOver {
+        
+        if currentScreen == .start {
 
             for touch in touches {
 
@@ -817,10 +1126,117 @@ class GameScene: SKScene {
                 let touchedNodes = nodes(at: location)
 
                 if touchedNodes.contains(where: {
+                    $0.name == "playButton" ||
+                    $0.parent?.name == "playButton"
+                }) {
+
+                    childNode(withName: "startScreen")?
+                        .removeFromParent()
+
+                    showControlsScreen()
+
+                    return
+                }
+            }
+
+            return
+        }
+        
+        if currentScreen == .controls {
+
+            for touch in touches {
+
+                let location = touch.location(in: self)
+                let touchedNodes = nodes(at: location)
+
+                if touchedNodes.contains(where: {
+                    $0.name == "continueButton" ||
+                    $0.parent?.name == "continueButton"
+                }) {
+                    
+                    childNode(withName: "controlsScreen")?
+                        .removeFromParent()
+
+                    showNameEntryScreen()
+
+                    return
+                }
+            }
+
+            return
+        }
+        
+        
+        if currentScreen == .nameEntry {
+
+            for touch in touches {
+
+                let location = touch.location(in: self)
+                let touchedNodes = nodes(at: location)
+
+                // Tap the name label to enter a name
+                if touchedNodes.contains(where: {
+                    $0.name == "playerNameLabel"
+                }) {
+                    promptForPlayerName()
+                    return
+                }
+
+                // Start gameplay
+                if touchedNodes.contains(where: {
+                    $0.name == "startGameButton" ||
+                    $0.parent?.name == "startGameButton"
+                }) {
+
+                    guard !playerName
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                        .isEmpty else {
+                        promptForPlayerName()
+                        return
+                    }
+
+                    childNode(withName: "nameEntryScreen")?
+                        .removeFromParent()
+
+                    currentScreen = .playing
+                    lastUpdateTime = 0
+
+                    return
+                }
+            }
+
+            return
+        }
+
+
+        if isGameOver {
+
+            for touch in touches {
+
+                let location = touch.location(in: self)
+                let touchedNodes = nodes(at: location)
+
+                if let restartNode = touchedNodes.first(where: {
                     $0.name == "restartButton" ||
                     $0.parent?.name == "restartButton"
                 }) {
-                    restartGame()
+
+                    let button = restartNode.parent?.name == "restartButton"
+                        ? restartNode.parent!
+                        : restartNode
+
+                    animateRestartButton(button)
+
+                    // Wait for the animation before restarting
+                    let wait = SKAction.wait(forDuration: 0.24)
+
+                    run(SKAction.sequence([
+                        wait,
+                        SKAction.run { [weak self] in
+                            self?.restartGame()
+                        }
+                    ]))
+
                     return
                 }
             }
