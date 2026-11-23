@@ -49,6 +49,15 @@ class GameScene: SKScene {
     let gravity: CGFloat = -1200
     let jumpVelocity: CGFloat = 750
     
+    // MARK: - Jump
+    func jump() {
+
+        if !isJumping {
+            verticalVelocity = jumpVelocity
+            isJumping = true
+        }
+    }
+    
     // MARK: - Touch Controls
     var leftButton = SKShapeNode()
     var jumpButton = SKShapeNode()
@@ -92,6 +101,10 @@ class GameScene: SKScene {
     // MARK: - Scoring
     var score = 0
     var scoreTimer: TimeInterval = 0
+    
+    var highScore = UserDefaults.standard.integer(
+        forKey: "runningGameHighScore"
+    )
 
     let scoreLabel = SKLabelNode(fontNamed: "Arial-BoldMT")
     
@@ -110,6 +123,7 @@ class GameScene: SKScene {
         case controls
         case nameEntry
         case playing
+        case scoreResults
         case gameOver
     }
     
@@ -121,29 +135,20 @@ class GameScene: SKScene {
         overlay.name = "startScreen"
         overlay.zPosition = 300
 
-        let background = SKShapeNode(rectOf: size)
-        background.fillColor = UIColor(
-            red: 32 / 255,
-            green: 32 / 255,
-            blue: 32 / 255,
-            alpha: 1
+        // Title screen background image
+        let titleBackground = SKSpriteNode(
+            imageNamed: "titleScreenBackground"
         )
-        background.strokeColor = .clear
-        background.position = CGPoint(
+
+        titleBackground.position = CGPoint(
             x: size.width / 2,
             y: size.height / 2
         )
-        overlay.addChild(background)
 
-        let title = SKLabelNode(fontNamed: "Arial-BoldMT")
-        title.text = "RUNNING GAME"
-        title.fontSize = 55
-        title.fontColor = .white
-        title.position = CGPoint(
-            x: size.width / 2,
-            y: size.height / 2 + 80
-        )
-        overlay.addChild(title)
+        titleBackground.size = size
+        titleBackground.zPosition = 0
+
+        overlay.addChild(titleBackground)
 
         let playButton = SKShapeNode(
             rectOf: CGSize(width: 180, height: 55),
@@ -151,109 +156,63 @@ class GameScene: SKScene {
         )
 
         playButton.name = "playButton"
-        playButton.fillColor = .red
-        playButton.strokeColor = .white
+        playButton.fillColor = .white
+        playButton.strokeColor = .black
         playButton.lineWidth = 3
         playButton.position = CGPoint(
-            x: size.width / 2,
-            y: size.height / 2 - 60
+            x: size.width / 2 + 100,  // Move right
+            y: size.width / 2 - 330  // Move down
         )
 
         let playLabel = SKLabelNode(fontNamed: "Arial-BoldMT")
         playLabel.text = "PLAY"
         playLabel.name = "playButton"
         playLabel.fontSize = 25
-        playLabel.fontColor = .white
+        playLabel.fontColor = .black
         playLabel.verticalAlignmentMode = .center
 
         playButton.addChild(playLabel)
         overlay.addChild(playButton)
+        
+        // Slowly zoom the PLAY button in and out
+        let zoomIn = SKAction.scale(to: 1.20, duration: 1.0)
+        let zoomOut = SKAction.scale(to: 1.0, duration: 1.0)
+
+        let pulseAnimation = SKAction.sequence([
+            zoomIn,
+            zoomOut
+        ])
+
+        playButton.run(
+            SKAction.repeatForever(pulseAnimation),
+            withKey: "playButtonPulse"
+        )
 
         addChild(overlay)
     }
     
+    
     func showControlsScreen() {
-
         currentScreen = .controls
 
         let overlay = SKNode()
         overlay.name = "controlsScreen"
         overlay.zPosition = 300
 
-        // Background
-        let background = SKShapeNode(rectOf: size)
-        background.fillColor = UIColor(
-            red: 32 / 255,
-            green: 32 / 255,
-            blue: 32 / 255,
-            alpha: 1
+        // Controls screen background
+        let controlsBackground = SKSpriteNode(
+            imageNamed: "controlsScreenBackground"
         )
-        background.strokeColor = .clear
-        background.position = CGPoint(
+
+        controlsBackground.position = CGPoint(
             x: size.width / 2,
             y: size.height / 2
         )
-        overlay.addChild(background)
 
-        // Title
-        let title = SKLabelNode(fontNamed: "Arial-BoldMT")
-        title.text = "CONTROLS"
-        title.fontSize = 45
-        title.fontColor = .white
-        title.position = CGPoint(
-            x: size.width / 2,
-            y: size.height / 2 + 140
-        )
-        overlay.addChild(title)
+        controlsBackground.size = size
+        controlsBackground.zPosition = 0
 
-        // Instructions
-        let instructions = [
-            "LEFT - Move Left",
-            "RIGHT - Move Right",
-            "JUMP - Jump Over Enemies",
-            "Collect Coins to Earn Points",
-            "Avoid Skull Enemies!"
-        ]
-
-        for (index, instruction) in instructions.enumerated() {
-
-            let label = SKLabelNode(fontNamed: "Arial")
-            label.text = instruction
-            label.fontSize = 22
-            label.fontColor = .white
-            label.position = CGPoint(
-                x: size.width / 2,
-                y: size.height / 2 + 70 - CGFloat(index) * 45
-            )
-
-            overlay.addChild(label)
-        }
-
-        // Continue button
-        let continueButton = SKShapeNode(
-            rectOf: CGSize(width: 180, height: 55),
-            cornerRadius: 10
-        )
-
-        continueButton.name = "continueButton"
-        continueButton.fillColor = .red
-        continueButton.strokeColor = .white
-        continueButton.lineWidth = 3
-        continueButton.zPosition = 4
-        continueButton.position = CGPoint(
-            x: size.width / 2,
-            y: 55
-        )
-
-        let continueLabel = SKLabelNode(fontNamed: "Arial-BoldMT")
-        continueLabel.text = "CONTINUE"
-        continueLabel.name = "continueButton"
-        continueLabel.fontSize = 24
-        continueLabel.fontColor = .white
-        continueLabel.verticalAlignmentMode = .center
-
-        continueButton.addChild(continueLabel)
-        overlay.addChild(continueButton)
+        overlay.addChild(controlsBackground)
 
         addChild(overlay)
     }
@@ -283,7 +242,7 @@ class GameScene: SKScene {
 
         // Title
         let title = SKLabelNode(fontNamed: "Arial-BoldMT")
-        title.text = "ENTER YOUR NAME"
+        title.text = "Enter your name"
         title.fontSize = 45
         title.fontColor = .white
         title.position = CGPoint(
@@ -311,7 +270,12 @@ class GameScene: SKScene {
         )
 
         startButton.name = "startGameButton"
-        startButton.fillColor = .red
+        startButton.fillColor = UIColor(
+            red: 0 / 255,
+            green: 166 / 255,
+            blue: 37 / 255,
+            alpha: 1
+        )
         startButton.strokeColor = .white
         startButton.lineWidth = 3
         startButton.position = CGPoint(
@@ -552,6 +516,23 @@ class GameScene: SKScene {
         }
     }
     
+    func animateButtonPress(
+        _ button: SKNode,
+        completion: @escaping () -> Void
+    ) {
+        let popUp = SKAction.scale(to: 1.12, duration: 0.10)
+        let popDown = SKAction.scale(to: 1.0, duration: 0.12)
+
+        let animation = SKAction.sequence([
+            popUp,
+            popDown,
+            SKAction.run(completion)
+        ])
+
+        button.removeAction(forKey: "buttonPop")
+        button.run(animation, withKey: "buttonPop")
+    }
+    
     // MARK: - Create Touch Button
     func createButton(
         title: String,
@@ -701,48 +682,188 @@ class GameScene: SKScene {
         }
     }
     
-    func animateRestartButton(_ button: SKNode) {
+    func addScrollingResultsBackground(to overlay: SKNode) {
 
-        // Expand the button to 110% of its original size
-        let expand = SKAction.scale(to: 1.1, duration: 0.12)
+        let backgroundContainer = SKNode()
+        backgroundContainer.zPosition = -10
 
-        // Return to its original size
-        let shrink = SKAction.scale(to: 1.0, duration: 0.12)
+        let backgroundWidth = size.height * 2.0
 
-        expand.timingMode = .easeOut
-        shrink.timingMode = .easeIn
+        for index in 0..<2 {
+            let background = SKSpriteNode(
+                imageNamed: "resultsSkyBackground"
+            )
 
-        button.run(
-            SKAction.sequence([expand, shrink]),
-            withKey: "restartAnimation"
+            background.size = CGSize(
+                width: backgroundWidth,
+                height: size.height
+            )
+
+            background.position = CGPoint(
+                x: size.width / 2 + CGFloat(index) * backgroundWidth,
+                y: size.height / 2
+            )
+
+            backgroundContainer.addChild(background)
+        }
+
+        overlay.addChild(backgroundContainer)
+
+        let scroll = SKAction.moveBy(
+            x: -backgroundWidth,
+            y: 0,
+            duration: 30
         )
+
+        let reset = SKAction.moveTo(
+            x: 0,
+            duration: 0
+        )
+
+        backgroundContainer.run(
+            SKAction.repeatForever(
+                SKAction.sequence([scroll, reset])
+            )
+        )
+    }
+    
+    func showScoreResultsScreen() {
+
+        currentScreen = .scoreResults
+
+        let isNewHighScore = score > highScore
+
+        if isNewHighScore {
+            highScore = score
+
+            UserDefaults.standard.set(
+                highScore,
+                forKey: "runningGameHighScore"
+            )
+        }
+
+        let overlay = SKNode()
+        overlay.name = "scoreResultsScreen"
+        overlay.zPosition = 300
+
+        addScrollingResultsBackground(to: overlay)
+
+        // Title
+        let title = SKLabelNode(fontNamed: "Arial-BoldMT")
+        title.text = "YOUR RESULTS"
+        title.fontSize = 50
+        title.fontColor = .black
+        title.position = CGPoint(
+            x: size.width / 2,
+            y: size.height / 2 + 110
+        )
+        overlay.addChild(title)
+
+        // Final score
+        let finalScoreLabel = SKLabelNode(fontNamed: "Arial-BoldMT")
+        finalScoreLabel.text = "Final Score: \(score)"
+        finalScoreLabel.fontSize = 32
+        finalScoreLabel.fontColor = .black
+        finalScoreLabel.position = CGPoint(
+            x: size.width / 2,
+            y: size.height / 2 + 10
+        )
+        overlay.addChild(finalScoreLabel)
+
+        // High score
+        let highScoreLabel = SKLabelNode(fontNamed: "Arial-BoldMT")
+        highScoreLabel.text = "High Score: \(highScore)"
+        highScoreLabel.fontSize = 32
+        highScoreLabel.fontColor = .darkGray
+        highScoreLabel.position = CGPoint(
+            x: size.width / 2,
+            y: size.height / 2 - 40
+        )
+        overlay.addChild(highScoreLabel)
+        
+        // Restart button
+        let restartButton = SKShapeNode(
+            rectOf: CGSize(width: 180, height: 55),
+            cornerRadius: 10
+        )
+
+        restartButton.name = "resultsRestartButton"
+        restartButton.fillColor = .black
+        restartButton.strokeColor = .white
+        restartButton.lineWidth = 3
+        restartButton.position = CGPoint(
+            x: size.width / 2,
+            y: size.height / 2 - 115
+        )
+
+        let restartLabel = SKLabelNode(
+            fontNamed: "Arial-BoldMT"
+        )
+
+        restartLabel.text = "RESTART"
+        restartLabel.name = "resultsRestartButton"
+        restartLabel.fontSize = 24
+        restartLabel.fontColor = .white
+        restartLabel.verticalAlignmentMode = .center
+
+        restartButton.addChild(restartLabel)
+        overlay.addChild(restartButton)
+        
+        // Display NEW HIGH SCORE message
+        if isNewHighScore {
+
+            let newHighScoreLabel = SKLabelNode(
+                fontNamed: "Arial-BoldMT"
+            )
+
+            newHighScoreLabel.text = "NEW HIGH SCORE!"
+            newHighScoreLabel.fontSize = 30
+            newHighScoreLabel.fontColor = .yellow
+
+            newHighScoreLabel.position = CGPoint(
+                x: size.width / 2,
+                y: size.height / 2 + 50
+            )
+
+            newHighScoreLabel.zPosition = 10
+
+            overlay.addChild(newHighScoreLabel)
+
+            // Blinking animation
+            let fadeOut = SKAction.fadeAlpha(
+                to: 0.2,
+                duration: 0.5
+            )
+
+            let fadeIn = SKAction.fadeAlpha(
+                to: 1.0,
+                duration: 0.5
+            )
+
+            let blinkAnimation = SKAction.repeatForever(
+                SKAction.sequence([
+                    fadeOut,
+                    fadeIn
+                ])
+            )
+
+            newHighScoreLabel.run(blinkAnimation)
+        }
+        // Add the Results Screen to the scene
+            addChild(overlay)
     }
 
     func showGameOverScreen() {
-        guard !isGameOver else { return }
 
-        isGameOver = true
+        guard childNode(withName: "gameOverOverlay") == nil else {
+            return
+        }
+
+        currentScreen = .gameOver
 
         let overlay = SKNode()
         overlay.name = "gameOverOverlay"
         overlay.zPosition = 200
-
-        // Original dark gray background
-        let background = SKShapeNode(
-            rectOf: size
-        )
-        background.fillColor = UIColor(
-            red: 32 / 255,
-            green: 32 / 255,
-            blue: 32 / 255,
-            alpha: 1
-        )
-        background.strokeColor = .clear
-        background.position = CGPoint(
-            x: size.width / 2,
-            y: size.height / 2
-        )
-        overlay.addChild(background)
 
         // Original Game Over image
         let gameOverImage = SKSpriteNode(
@@ -755,7 +876,7 @@ class GameScene: SKScene {
         gameOverImage.zPosition = 2
         overlay.addChild(gameOverImage)
 
-        // Original damage message
+        // Damage message
         let message = SKLabelNode(fontNamed: "Arial-BoldMT")
         message.text = "You got hit too many times"
         message.fontSize = 35
@@ -764,40 +885,41 @@ class GameScene: SKScene {
             x: size.width / 2,
             y: size.height / 2 - 30
         )
-        overlay.addChild(message)
         message.zPosition = 3
-        
-        // Restart button
-        let restartButton = SKShapeNode(
+        overlay.addChild(message)
+
+        // Continue button
+        let continueButton = SKShapeNode(
             rectOf: CGSize(width: 180, height: 55),
             cornerRadius: 10
         )
-        restartButton.name = "restartButton"
-        restartButton.fillColor = .black
-        
-        restartButton.strokeColor = .white
-        restartButton.lineWidth = 3
-        
-        // Display the button above the Game Over image
-        restartButton.zPosition = 4
-        
-        restartButton.position = CGPoint(
+
+        continueButton.name = "gameOverContinueButton"
+        continueButton.fillColor = UIColor(
+            red: 67 / 255,
+            green: 127 / 255,
+            blue: 181 / 255,
+            alpha: 1
+        )
+        continueButton.strokeColor = .white
+        continueButton.lineWidth = 3
+        continueButton.position = CGPoint(
             x: size.width / 2,
             y: size.height / 2 - 110
         )
+        continueButton.zPosition = 4
 
-        let restartLabel = SKLabelNode(fontNamed: "Arial-BoldMT")
-        restartLabel.text = "Restart"
-        restartLabel.name = "restartButton"
-        restartLabel.fontSize = 25
-        restartLabel.fontColor = .white
-        restartLabel.verticalAlignmentMode = .center
-        
-        // Keep text above the button background
-        restartLabel.zPosition = 2
+        let continueLabel = SKLabelNode(
+            fontNamed: "Arial-BoldMT"
+        )
+        continueLabel.text = "CONTINUE"
+        continueLabel.name = "gameOverContinueButton"
+        continueLabel.fontSize = 25
+        continueLabel.fontColor = .white
+        continueLabel.verticalAlignmentMode = .center
 
-        restartButton.addChild(restartLabel)
-        overlay.addChild(restartButton)
+        continueButton.addChild(continueLabel)
+        overlay.addChild(continueButton)
 
         addChild(overlay)
     }
@@ -818,7 +940,12 @@ class GameScene: SKScene {
             player.removeAllActions()
             player.alpha = 1.0
 
+            // Stop gameplay
+            isGameOver = true
+
+            // Display Game Over Screen
             showGameOverScreen()
+
             return
         }
 
@@ -1050,15 +1177,6 @@ class GameScene: SKScene {
         
         checkSkullCollisions()
     }
-
-    // MARK: - Jump
-    func jump() {
-
-        if !isJumping {
-            verticalVelocity = jumpVelocity
-            isJumping = true
-        }
-    }
     
     // MARK: - Scroll Background
     func scrollBackground(deltaTime: CGFloat) {
@@ -1112,16 +1230,14 @@ class GameScene: SKScene {
     }
 
     // MARK: - Touch Began
+    
     override func touchesBegan(
         _ touches: Set<UITouch>,
         with event: UIEvent?
     ) {
-        
-        
+
         if currentScreen == .start {
-
             for touch in touches {
-
                 let location = touch.location(in: self)
                 let touchedNodes = nodes(at: location)
 
@@ -1130,10 +1246,12 @@ class GameScene: SKScene {
                     $0.parent?.name == "playButton"
                 }) {
 
-                    childNode(withName: "startScreen")?
-                        .removeFromParent()
-
-                    showControlsScreen()
+                    if let playButton = childNode(withName: "//playButton") {
+                        animateButtonPress(playButton) {
+                            self.childNode(withName: "startScreen")?.removeFromParent()
+                            self.showControlsScreen()
+                        }
+                    }
 
                     return
                 }
@@ -1141,42 +1259,26 @@ class GameScene: SKScene {
 
             return
         }
-        
+
+        // MARK: - CONTROLS SCREEN
+
         if currentScreen == .controls {
-
-            for touch in touches {
-
-                let location = touch.location(in: self)
-                let touchedNodes = nodes(at: location)
-
-                if touchedNodes.contains(where: {
-                    $0.name == "continueButton" ||
-                    $0.parent?.name == "continueButton"
-                }) {
-                    
-                    childNode(withName: "controlsScreen")?
-                        .removeFromParent()
-
-                    showNameEntryScreen()
-
-                    return
-                }
-            }
-
+            childNode(withName: "controlsScreen")?.removeFromParent()
+            showNameEntryScreen()
             return
         }
-        
-        
+
+        // MARK: - NAME ENTRY SCREEN
+
         if currentScreen == .nameEntry {
-
             for touch in touches {
-
                 let location = touch.location(in: self)
                 let touchedNodes = nodes(at: location)
 
                 // Tap the name label to enter a name
                 if touchedNodes.contains(where: {
-                    $0.name == "playerNameLabel"
+                    $0.name == "playerNameLabel" ||
+                    $0.parent?.name == "playerNameLabel"
                 }) {
                     promptForPlayerName()
                     return
@@ -1195,11 +1297,15 @@ class GameScene: SKScene {
                         return
                     }
 
-                    childNode(withName: "nameEntryScreen")?
-                        .removeFromParent()
-
-                    currentScreen = .playing
-                    lastUpdateTime = 0
+                    if let startGameButton = childNode(
+                        withName: "//startGameButton"
+                    ) {
+                        animateButtonPress(startGameButton) {
+                            self.childNode(withName: "nameEntryScreen")?.removeFromParent()
+                            self.currentScreen = .playing
+                            self.lastUpdateTime = 0
+                        }
+                    }
 
                     return
                 }
@@ -1208,34 +1314,25 @@ class GameScene: SKScene {
             return
         }
 
+        // MARK: - RESULTS SCREEN
 
-        if isGameOver {
-
+        if currentScreen == .scoreResults {
             for touch in touches {
-
                 let location = touch.location(in: self)
                 let touchedNodes = nodes(at: location)
 
-                if let restartNode = touchedNodes.first(where: {
-                    $0.name == "restartButton" ||
-                    $0.parent?.name == "restartButton"
+                if touchedNodes.contains(where: {
+                    $0.name == "resultsRestartButton" ||
+                    $0.parent?.name == "resultsRestartButton"
                 }) {
 
-                    let button = restartNode.parent?.name == "restartButton"
-                        ? restartNode.parent!
-                        : restartNode
-
-                    animateRestartButton(button)
-
-                    // Wait for the animation before restarting
-                    let wait = SKAction.wait(forDuration: 0.24)
-
-                    run(SKAction.sequence([
-                        wait,
-                        SKAction.run { [weak self] in
-                            self?.restartGame()
+                    if let restartButton = childNode(
+                        withName: "//resultsRestartButton"
+                    ) {
+                        animateButtonPress(restartButton) {
+                            self.restartGame()
                         }
-                    ]))
+                    }
 
                     return
                 }
@@ -1244,10 +1341,44 @@ class GameScene: SKScene {
             return
         }
 
+        // MARK: - GAME OVER SCREEN
+
+        if isGameOver {
+            for touch in touches {
+                let location = touch.location(in: self)
+                let touchedNodes = nodes(at: location)
+
+                if touchedNodes.contains(where: {
+                    $0.name == "gameOverContinueButton" ||
+                    $0.parent?.name == "gameOverContinueButton"
+                }) {
+
+                    if let continueButton = childNode(
+                        withName: "//gameOverContinueButton"
+                    ) {
+                        animateButtonPress(continueButton) {
+
+                            // Remove the Game Over screen
+                            self.childNode(
+                                withName: "gameOverOverlay"
+                            )?.removeFromParent()
+
+                            // Display the Results Screen
+                            self.showScoreResultsScreen()
+                        }
+                    }
+
+                    return
+                }
+            }
+
+            return
+        }
+
+        // MARK: - GAMEPLAY CONTROLS
+
         for touch in touches {
-
             if let action = actionForTouch(touch) {
-
                 activeTouches[touch] = action
 
                 if action == "JUMP" {
