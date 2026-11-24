@@ -1,6 +1,6 @@
-
 import SpriteKit
 import UIKit
+import AVFoundation
 
 class GameScene: SKScene {
     
@@ -65,16 +65,6 @@ class GameScene: SKScene {
 
     // Track multiple fingers independently
     var activeTouches: [UITouch: String] = [:]
-    
-    // MARK: - Skull-Biting Enemies
-    var skullEnemies: [SKSpriteNode] = []
-    var skullTextures: [SKTexture] = []
-
-    var skullSpawnTimer: TimeInterval = 0
-    let skullSpawnInterval: TimeInterval = 4.0
-
-    let skullSpeed: CGFloat = 200
-    let skullSize = CGSize(width: 55, height: 55)
 
     // MARK: - Coins
     var coins: [SKSpriteNode] = []
@@ -98,6 +88,24 @@ class GameScene: SKScene {
     let coinMinimumY: CGFloat = 180
     let coinMaximumY: CGFloat = 400
     
+    // MARK: - Skull-Biting Enemies
+    var skullEnemies: [SKSpriteNode] = []
+    var skullTextures: [SKTexture] = []
+
+    var skullSpawnTimer: TimeInterval = 0
+    let skullSpawnInterval: TimeInterval = 4.0
+
+    let skullSpeed: CGFloat = 200
+    let skullSize = CGSize(width: 55, height: 55)
+    
+    var skullSoundPlayer: AVAudioPlayer?
+    
+    // MARK: - Bee Enemies
+    var beeEnemies: [SKSpriteNode] = []
+    var beeSpawnTimer: TimeInterval = 0
+    let beeSpawnInterval: TimeInterval = 5
+    let beeSpeed: CGFloat = 250
+    
     // MARK: - Scoring
     var score = 0
     var scoreTimer: TimeInterval = 0
@@ -114,6 +122,9 @@ class GameScene: SKScene {
     // MARK: - Frame Timing
     var lastUpdateTime: TimeInterval = 0
     
+    // MARK: - Background Music
+    var backgroundMusic: AVAudioPlayer?
+    
     var currentScreen: GameScreen = .start
     var playerName = ""
     
@@ -125,6 +136,36 @@ class GameScene: SKScene {
         case playing
         case scoreResults
         case gameOver
+    }
+    
+    // MARK: - Play Background Music
+    func playBackgroundMusic() {
+
+        guard let musicURL = Bundle.main.url(
+            forResource: "backgroundMusic",
+            withExtension: "mp3"
+        ) else {
+            print("Background music file not found")
+            return
+        }
+
+        do {
+            backgroundMusic = try AVAudioPlayer(contentsOf: musicURL)
+
+            backgroundMusic?.numberOfLoops = -1
+            backgroundMusic?.volume = 0.5
+            backgroundMusic?.prepareToPlay()
+            backgroundMusic?.play()
+
+        } catch {
+            print("Unable to play background music: \(error)")
+        }
+    }
+    
+    // MARK: - Stop Background Music
+    func stopBackgroundMusic() {
+        backgroundMusic?.stop()
+        backgroundMusic = nil
     }
     
     func showStartScreen() {
@@ -190,7 +231,6 @@ class GameScene: SKScene {
 
         addChild(overlay)
     }
-    
     
     func showControlsScreen() {
         currentScreen = .controls
@@ -384,8 +424,7 @@ class GameScene: SKScene {
         }
     }
     
-    
-    func playAnimation(_ animation: String) {
+        func playAnimation(_ animation: String) {
         guard currentAnimation != animation else { return }
 
         currentAnimation = animation
@@ -514,6 +553,9 @@ class GameScene: SKScene {
         if currentScreen == .start {
             showStartScreen()
         }
+
+        // Start background music as soon as the app opens
+        playBackgroundMusic()
     }
     
     func animateButtonPress(
@@ -636,6 +678,66 @@ class GameScene: SKScene {
         superCoins.append(superCoin)
     }
     
+    // MARK: - Coin Collection Effect
+    func showCoinCollectionEffect(
+        at position: CGPoint,
+        isSuperCoin: Bool = false
+    ) {
+
+        // Create sparkle image
+        let sparkle = SKSpriteNode(
+            imageNamed: "coinSparkle"
+        )
+
+        sparkle.position = position
+
+        // Make the effect larger for super coins
+        if isSuperCoin {
+            sparkle.size = CGSize(width: 65, height: 75)
+        } else {
+            sparkle.size = CGSize(width: 40, height: 50)
+        }
+
+        sparkle.zPosition = 20
+
+        addChild(sparkle)
+
+        // Keep sparkle visible for one second
+        sparkle.run(
+            SKAction.sequence([
+                SKAction.wait(forDuration: 0.35),
+                SKAction.removeFromParent()
+            ])
+        )
+
+        // Play coin collection sound
+        run(
+            SKAction.playSoundFileNamed(
+                "coinGet.mp3",
+                waitForCompletion: false
+            )
+        )
+    }
+    
+    // MARK: - Skull Sound
+    func playSkullSound() {
+        guard let soundURL = Bundle.main.url(
+            forResource: "skull-sound",
+            withExtension: "wav"
+        ) else {
+            return
+        }
+
+        do {
+            skullSoundPlayer = try AVAudioPlayer(contentsOf: soundURL)
+            skullSoundPlayer?.volume = 0.10
+            skullSoundPlayer?.prepareToPlay()
+            skullSoundPlayer?.play()
+        } catch {
+            print("Unable to play skull sound: \(error)")
+        }
+    }
+    
     func spawnSkullEnemy() {
 
         guard !skullTextures.isEmpty else { return }
@@ -665,8 +767,10 @@ class GameScene: SKScene {
 
         addChild(skull)
         skullEnemies.append(skull)
+        
+        // Play skull sound when it appears
+        playSkullSound()
     }
-    
     
     func checkSkullCollisions() {
 
@@ -678,6 +782,73 @@ class GameScene: SKScene {
 
                 takeDamage()
                 break
+            }
+        }
+    }
+    
+    // MARK: - Bee Animation
+    func createBeeAnimation() -> SKAction {
+
+        let beeFrames = [
+            SKTexture(imageNamed: "bee1"),
+            SKTexture(imageNamed: "bee2")
+        ]
+
+        // Alternate between the two wing positions
+        let animation = SKAction.animate(
+            with: beeFrames,
+            timePerFrame: 0.15
+        )
+
+        // Keep the bee flying continuously
+        return SKAction.repeatForever(animation)
+    }
+    
+    // MARK: - Spawn Bee Enemy
+    func spawnBeeEnemy() {
+
+        let bee = SKSpriteNode(imageNamed: "bee1")
+
+        bee.size = CGSize(width: 55, height: 55)
+        bee.position = CGPoint(
+            x: size.width + 40,
+            y: groundHeight + 180
+        )
+
+        bee.zPosition = 5
+
+        // Start the wing animation
+        bee.run(createBeeAnimation())
+
+        addChild(bee)
+        beeEnemies.append(bee)
+    }
+    
+    // MARK: - Update Bee Enemies
+    func updateBeeEnemies(deltaTime: CGFloat) {
+
+        for bee in beeEnemies.reversed() {
+
+            // Move the bee toward the left
+            bee.position.x -= beeSpeed * deltaTime
+
+            // Check if the bee hits the player
+            if bee.frame.intersects(player.frame) {
+
+                // Damage the player without removing the bee
+                takeDamage()
+
+                if isGameOver {
+                    return
+                }
+            }
+            
+            // Remove bees that leave the screen
+            else if bee.position.x < -50 {
+                
+                // Remove the bee after it leaves the screen
+                   bee.removeFromParent()
+                   beeEnemies.removeAll { $0 === bee }
             }
         }
     }
@@ -766,7 +937,7 @@ class GameScene: SKScene {
         finalScoreLabel.fontColor = .black
         finalScoreLabel.position = CGPoint(
             x: size.width / 2,
-            y: size.height / 2 + 10
+            y: size.height / 2 - 10
         )
         overlay.addChild(finalScoreLabel)
 
@@ -777,7 +948,7 @@ class GameScene: SKScene {
         highScoreLabel.fontColor = .darkGray
         highScoreLabel.position = CGPoint(
             x: size.width / 2,
-            y: size.height / 2 - 40
+            y: size.height / 2 - 65
         )
         overlay.addChild(highScoreLabel)
         
@@ -793,7 +964,7 @@ class GameScene: SKScene {
         restartButton.lineWidth = 3
         restartButton.position = CGPoint(
             x: size.width / 2,
-            y: size.height / 2 - 115
+            y: size.height / 2 - 145
         )
 
         let restartLabel = SKLabelNode(
@@ -943,6 +1114,9 @@ class GameScene: SKScene {
             // Stop gameplay
             isGameOver = true
 
+            // Stop background music
+            stopBackgroundMusic()
+
             // Display Game Over Screen
             showGameOverScreen()
 
@@ -987,6 +1161,11 @@ class GameScene: SKScene {
                 score += 100
                 scoreLabel.text = "Score: \(score)"
 
+                // Show sparkle and play sound
+                showCoinCollectionEffect(
+                    at: coin.position
+                )
+
                 coin.removeFromParent()
 
             } else if coin.position.x < -coin.size.width {
@@ -1012,6 +1191,12 @@ class GameScene: SKScene {
 
                 score += 500
                 scoreLabel.text = "Score: \(score)"
+
+                // Show sparkle and play sound
+                showCoinCollectionEffect(
+                    at: superCoin.position,
+                    isSuperCoin: true
+                )
 
                 superCoin.removeFromParent()
 
@@ -1175,6 +1360,17 @@ class GameScene: SKScene {
         // Move skull enemies
         updateSkullEnemies(deltaTime: deltaTime)
         
+        // Spawn bees every 5 seconds
+        beeSpawnTimer += deltaTime
+
+        if beeSpawnTimer >= beeSpawnInterval {
+            spawnBeeEnemy()
+            beeSpawnTimer = 0
+        }
+
+        // Update existing bees
+        updateBeeEnemies(deltaTime: CGFloat(deltaTime))
+        
         checkSkullCollisions()
     }
     
@@ -1315,7 +1511,6 @@ class GameScene: SKScene {
         }
 
         // MARK: - RESULTS SCREEN
-
         if currentScreen == .scoreResults {
             for touch in touches {
                 let location = touch.location(in: self)
