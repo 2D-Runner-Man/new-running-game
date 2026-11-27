@@ -11,16 +11,47 @@ class GameScene: SKScene {
     let backgroundSpeed: CGFloat = 100
     let backgroundOverlap: CGFloat = 2
     
-    var idleTextures: [SKTexture] =
-    [SKTexture(imageNamed: "idle1"),
-    SKTexture(imageNamed: "idle2")]
+//    var idleTextures: [SKTexture] =
+//    [SKTexture(imageNamed: "idle1"),
+//    SKTexture(imageNamed: "idle2")]
+//    
+//    var runTextures: [SKTexture] = []
+//
+//    let jumpUpTexture = SKTexture(imageNamed: "jumpUp")
+//    let jumpFallTexture = SKTexture(imageNamed: "jumpFall")
+//    
+//    let controlsAreaHeight: CGFloat = 100
+//
+//    var currentAnimation = ""
+//    var facingRight = true
     
-    var runTextures: [SKTexture] = []
+    ///// MARK: - Red-haired Boy Frames
 
-    let jumpUpTexture = SKTexture(imageNamed: "jumpUp")
-    let jumpFallTexture = SKTexture(imageNamed: "jumpFall")
+//    var idleTextures: [SKTexture] = [
+//        SKTexture(imageNamed: "redBoyIdle1"),
+//        SKTexture(imageNamed: "redBoyIdle2")
+//    ]
+//
+//    var runTextures: [SKTexture] = []
+//
+//    let jumpUpTexture = SKTexture(imageNamed: "redBoyJumpUp")
+//    let jumpFallTexture = SKTexture(imageNamed: "redBoyJumpFall")
+//    let hitTexture = SKTexture(imageNamed: "redBoyHit")
+//
+//    var isHitAnimating = false
+//    let hitAnimationDuration: TimeInterval = 0.35
     
-    let controlsAreaHeight: CGFloat = 100
+    // MARK: - Character Animation Frames
+
+    var idleTextures: [SKTexture] = []
+    var runTextures: [SKTexture] = []
+    var hitTextures: [SKTexture] = []
+
+    var jumpUpTexture = SKTexture(imageNamed: "redBoyJumpUp")
+    var jumpFallTexture = SKTexture(imageNamed: "redBoyJumpFall")
+
+    var isHitAnimating = false
+    let hitAnimationDuration: TimeInterval = 0.35
 
     var currentAnimation = ""
     var facingRight = true
@@ -88,6 +119,15 @@ class GameScene: SKScene {
     let coinMinimumY: CGFloat = 180
     let coinMaximumY: CGFloat = 400
     
+    // MARK: - Playable Characters
+    enum PlayableCharacter: String, CaseIterable {
+        case redBoy
+        case chineseBoy
+        case cat
+    }
+
+    var selectedCharacter: PlayableCharacter = .redBoy
+    
     // MARK: - Skull-Biting Enemies
     var skullEnemies: [SKSpriteNode] = []
     var skullTextures: [SKTexture] = []
@@ -132,6 +172,7 @@ class GameScene: SKScene {
     enum GameScreen {
         case start
         case controls
+        case characterSelection
         case nameEntry
         case playing
         case scoreResults
@@ -178,7 +219,8 @@ class GameScene: SKScene {
 
         // Title screen background image
         let titleBackground = SKSpriteNode(
-            imageNamed: "titleScreenBackground"
+            // imageNamed: "titleScreenBackground"
+            imageNamed: "titleBackgroundScreen"
         )
 
         titleBackground.position = CGPoint(
@@ -201,8 +243,12 @@ class GameScene: SKScene {
         playButton.strokeColor = .black
         playButton.lineWidth = 3
         playButton.position = CGPoint(
-            x: size.width / 2 + 100,  // Move right
-            y: size.width / 2 - 330  // Move down
+            // Old Title Screen
+            // x: size.width / 2 + 100,  // Move right
+            // y: size.width / 2 - 330  // Move down
+            // New Title Screen
+            x: size.width / 2 - 300,  // Move right
+            y: size.width / 2 - 360  // Move down
         )
 
         let playLabel = SKLabelNode(fontNamed: "Arial-BoldMT")
@@ -253,6 +299,128 @@ class GameScene: SKScene {
         controlsBackground.zPosition = 0
 
         overlay.addChild(controlsBackground)
+
+        addChild(overlay)
+    }
+    
+    // MARK: - Character Selection Screen
+    func showCharacterSelectionScreen() {
+
+        currentScreen = .characterSelection
+
+        let overlay = SKNode()
+        overlay.name = "characterSelectionScreen"
+        overlay.zPosition = 300
+
+        // Background
+        let background = SKSpriteNode(
+            color: .darkGray,
+            size: size
+        )
+
+        background.position = CGPoint(
+            x: size.width / 2,
+            y: size.height / 2
+        )
+
+        overlay.addChild(background)
+
+        // Title
+        let title = SKLabelNode(fontNamed: "Arial-BoldMT")
+        title.text = "SELECT YOUR CHARACTER"
+        title.fontSize = 40
+        title.fontColor = .white
+
+        title.position = CGPoint(
+            x: size.width / 2,
+            y: size.height - 75
+        )
+
+        title.zPosition = 1
+        overlay.addChild(title)
+
+        let characters: [(PlayableCharacter, String, String)] = [
+            (.redBoy, "Red-haired Boy", "redBoyIdle"),
+            (.chineseBoy, "Jumping Boy", "chineseBoyIdle"),
+            (.cat, "Mascot Cat", "catIdle")
+        ]
+
+        let spacing = size.width / CGFloat(characters.count + 1)
+
+        for (index, character) in characters.enumerated() {
+
+            let x = spacing * CGFloat(index + 1)
+
+            // Character selection card
+            let card = SKShapeNode(
+                rectOf: CGSize(width: 160, height: 180),
+                cornerRadius: 15
+            )
+
+            card.name = "character_\(character.0.rawValue)"
+            card.fillColor = .black
+            card.strokeColor = selectedCharacter == character.0
+                ? .green : .white
+            card.lineWidth = 3
+
+            card.position = CGPoint(
+                x: x,
+                y: size.height / 2 - 25
+            )
+
+            card.zPosition = 2
+
+            // Character preview
+            let preview = SKSpriteNode(
+                imageNamed: "\(character.2)1"
+            )
+
+            preview.size = CGSize(width: 75, height: 125)
+            preview.position.y = 20
+            preview.zPosition = 1
+
+            let frames = (1...2).map {
+                SKTexture(imageNamed: "\(character.2)\($0)")
+            }
+
+            preview.run(
+                .repeatForever(
+                    .animate(with: frames, timePerFrame: 0.15)
+                )
+            )
+
+            card.addChild(preview)
+
+            overlay.addChild(card)
+        }
+
+        // Continue button
+        let continueButton = SKShapeNode(
+            rectOf: CGSize(width: 200, height: 55),
+            cornerRadius: 10
+        )
+
+        continueButton.name = "characterContinueButton"
+        continueButton.fillColor = .systemGreen
+        continueButton.strokeColor = .white
+        continueButton.lineWidth = 3
+
+        continueButton.position = CGPoint(
+            x: size.width / 2,
+            y: 65
+        )
+
+        continueButton.zPosition = 2
+
+        let continueLabel = SKLabelNode(fontNamed: "Arial-BoldMT")
+        continueLabel.text = "CONTINUE"
+        continueLabel.fontSize = 25
+        continueLabel.fontColor = .white
+        continueLabel.verticalAlignmentMode = .center
+        continueLabel.zPosition = 1
+
+        continueButton.addChild(continueLabel)
+        overlay.addChild(continueButton)
 
         addChild(overlay)
     }
@@ -414,25 +582,142 @@ class GameScene: SKScene {
     }
 
     // MARK - Create Animation Frames
+//    func loadPlayerAnimations() {
+//        idleTextures = (1...2).map {
+//            SKTexture(imageNamed: "idle\($0)")
+//        }
+//
+//        runTextures = (1...6).map {
+//            SKTexture(imageNamed: "run\($0)")
+//        }
+//    }
+    
     func loadPlayerAnimations() {
-        idleTextures = (1...2).map {
-            SKTexture(imageNamed: "idle\($0)")
-        }
 
-        runTextures = (1...6).map {
-            SKTexture(imageNamed: "run\($0)")
+        switch selectedCharacter {
+            
+        case .redBoy:
+
+            idleTextures = (1...2).map {
+                SKTexture(imageNamed: "redBoyIdle\($0)")
+            }
+
+            runTextures = (1...6).map {
+                SKTexture(imageNamed: "redBoyRun\($0)")
+            }
+
+            jumpUpTexture = SKTexture(imageNamed: "redBoyJumpUp")
+            jumpFallTexture = SKTexture(imageNamed: "redBoyJumpFall")
+
+            hitTextures = [
+                SKTexture(imageNamed: "redBoyHit")
+            ]
+
+        case .chineseBoy:
+
+            idleTextures = (1...2).map {
+                SKTexture(imageNamed: "chineseBoyIdle\($0)")
+            }
+
+            runTextures = (1...6).map {
+                SKTexture(imageNamed: "chineseBoyRun\($0)")
+            }
+
+            jumpUpTexture = SKTexture(imageNamed: "chineseBoyJumpUp")
+            jumpFallTexture = SKTexture(imageNamed: "chineseBoyJumpFall")
+
+            hitTextures = [
+                SKTexture(imageNamed: "chineseBoyHit")
+            ]
+
+        case .cat:
+
+            idleTextures = (1...2).map {
+                SKTexture(imageNamed: "catIdle\($0)")
+            }
+
+            runTextures = (1...5).map {
+                SKTexture(imageNamed: "catRun\($0)")
+            }
+
+            jumpUpTexture = SKTexture(imageNamed: "catJumpUp")
+            jumpFallTexture = SKTexture(imageNamed: "catJumpFall")
+
+            hitTextures = (1...2).map {
+                SKTexture(imageNamed: "catHit\($0)")
+            }
         }
     }
     
-        func playAnimation(_ animation: String) {
+    // MARK: - Player Hit Animation
+    func playHitAnimation() {
+
+        // Skip if the character has no hit sprites
+        guard !hitTextures.isEmpty else { return }
+
+        isHitAnimating = true
+
+        player.removeAction(forKey: "playerAnimation")
+
+        currentAnimation = "hit"
+
+        player.size.width = 55
+        player.size.height = 90
+
+        player.texture = hitTextures[0]
+
+        let hitAnimation = SKAction.animate(
+            with: hitTextures,
+            timePerFrame: hitAnimationDuration /
+                Double(hitTextures.count)
+        )
+
+        let finish = SKAction.run { [weak self] in
+            self?.isHitAnimating = false
+            self?.currentAnimation = ""
+        }
+
+        player.run(
+            SKAction.sequence([
+                hitAnimation,
+                finish
+            ]),
+            withKey: "hitAnimation"
+        )
+    }
+    
+    func playAnimation(_ animation: String) {
+        guard !isHitAnimating else { return }
         guard currentAnimation != animation else { return }
 
         currentAnimation = animation
         player.size.width = 50
+        player.size.height = 90
         player.removeAction(forKey: "playerAnimation")
 
         switch animation {
+    
         case "idle":
+
+            // Individual idle widths
+            switch selectedCharacter {
+
+            case .redBoy:
+                player.size.width = 55
+
+            case .chineseBoy:
+                player.size.width = 55
+
+            case .cat:
+                player.size.width = 55
+            }
+
+            player.run(
+                .repeatForever(
+                    .animate(with: idleTextures, timePerFrame: 0.15)
+                ),
+                withKey: "playerAnimation"
+            )
             player.run(
                 .repeatForever(
                     .animate(with: idleTextures, timePerFrame: 0.15)
@@ -441,15 +726,30 @@ class GameScene: SKScene {
             )
 
         case "running":
+            
+            // Individual idle widths
+            switch selectedCharacter {
+
+            case .redBoy:
+                player.size.width = 50
+
+            case .chineseBoy:
+                player.size.width = 50
+
+            case .cat:
+                player.size.width = 50
+            }
+            
             player.run(
                 .repeatForever(
                     .animate(with: runTextures, timePerFrame: 0.08)
                 ),
                 withKey: "playerAnimation"
             )
-
+            
         case "jumpUp":
             player.texture = jumpUpTexture
+            player.size.width = 55
 
         case "jumpFall":
             player.texture = jumpFallTexture
@@ -460,7 +760,6 @@ class GameScene: SKScene {
         }
     }
     
-
     // MARK: - Scene Setup
     override func didMove(to view: SKView) {
         
@@ -470,11 +769,11 @@ class GameScene: SKScene {
        backgroundColor = .black
 
        background1 = SKSpriteNode(
-           imageNamed: "mountainBackground"
+           imageNamed: "mountainBackground2"
        )
 
        background2 = SKSpriteNode(
-           imageNamed: "mountainBackground"
+           imageNamed: "mountainBackground2"
        )
 
         background1.size = CGSize(
@@ -507,7 +806,7 @@ class GameScene: SKScene {
 
         // Player
         player = SKSpriteNode(
-            imageNamed: "idle1"
+            imageNamed: "redBoyIdle1"
         )
 
         player.size = CGSize(width: 45, height: 90)
@@ -1102,6 +1401,9 @@ class GameScene: SKScene {
         lives -= 1
         isInvincible = true
 
+        // Play the character's hit animation
+        playHitAnimation()
+
         // Remove one life icon
         if let lastLife = lifeIcons.popLast() {
             lastLife.removeFromParent()
@@ -1233,6 +1535,12 @@ class GameScene: SKScene {
 
         let newScene = GameScene(size: size)
         newScene.scaleMode = scaleMode
+
+        // Preserve the selected character
+        newScene.selectedCharacter = selectedCharacter
+
+        // Preserve the player's name
+        newScene.playerName = playerName
 
         // Skip the Start Screen when restarting
         newScene.currentScreen = .playing
@@ -1457,10 +1765,77 @@ class GameScene: SKScene {
         }
 
         // MARK: - CONTROLS SCREEN
-
         if currentScreen == .controls {
             childNode(withName: "controlsScreen")?.removeFromParent()
-            showNameEntryScreen()
+            showCharacterSelectionScreen()
+            return
+        }
+        
+        // MARK: - CHARACTER SELECTION SCREEN
+        if currentScreen == .characterSelection {
+
+            for touch in touches {
+
+                let location = touch.location(in: self)
+                let touchedNodes = nodes(at: location)
+
+                for character in PlayableCharacter.allCases {
+
+                    let characterName = "character_\(character.rawValue)"
+
+                    if touchedNodes.contains(where: {
+                        $0.name == characterName ||
+                        $0.parent?.name == characterName
+                    }) {
+
+                        selectedCharacter = character
+
+                        // Update selection border
+                        for option in PlayableCharacter.allCases {
+
+                            if let card = childNode(
+                                withName: "//character_\(option.rawValue)"
+                            ) as? SKShapeNode {
+
+                                card.strokeColor =
+                                    option == selectedCharacter
+                                    ? .green : .white
+                            }
+                        }
+
+                        return
+                    }
+                }
+
+                // Continue to name entry
+                if touchedNodes.contains(where: {
+                    $0.name == "characterContinueButton" ||
+                    $0.parent?.name == "characterContinueButton"
+                }) {
+
+                    if let button = childNode(
+                        withName: "//characterContinueButton"
+                    ) {
+
+                        animateButtonPress(button) {
+
+                            self.loadPlayerAnimations()
+
+                            self.currentAnimation = ""
+                            self.playAnimation("idle")
+
+                            self.childNode(
+                                withName: "characterSelectionScreen"
+                            )?.removeFromParent()
+
+                            self.showNameEntryScreen()
+                        }
+                    }
+
+                    return
+                }
+            }
+
             return
         }
 
